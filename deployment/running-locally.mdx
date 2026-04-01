@@ -1,0 +1,155 @@
+---
+title: 'Running locally'
+description: 'How to set up and run the Skillhouse Backend and Frontend on your local machine.'
+keywords: ['local development', 'getting started', 'setup', 'run', 'install', 'dev server']
+---
+
+Skillhouse is a monorepo containing two independent applications: `Backend/` (Express + Node.js) and `Frontend/` (React + Vite). You run them as separate processes.
+
+## Prerequisites
+
+Before you begin, make sure the following are installed and running:
+
+- **Node.js 18+** — required by both applications
+- **MongoDB** — the Backend connects on startup; the process exits if the connection fails
+- **Redis** — used for OTP storage and session management; defaults to `127.0.0.1:6379`
+- **Git**
+
+## Setup
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/omchaudhary007/SkillHouse.git
+    cd SkillHouse
+    ```
+  </Step>
+
+  <Step title="Install Backend dependencies">
+    ```bash
+    cd Backend
+    npm install
+    ```
+  </Step>
+
+  <Step title="Install Frontend dependencies">
+    Open a second terminal and run:
+
+    ```bash
+    cd Frontend
+    npm install
+    ```
+  </Step>
+
+  <Step title="Configure environment variables">
+    Create a `.env` file in each application directory. See [Environment variables](/deployment/environment-variables) for the full list of required variables and example values.
+
+    ```bash
+    # Backend/.env
+    PORT=3000
+    MONGODB_URL=mongodb://localhost:27017/skillhouse
+    JWT_SECRET=...
+    REFRESH_SECRET=...
+    CLIENT_URL=http://localhost:5173
+    # ... (see environment variables page for all required vars)
+    ```
+
+    ```bash
+    # Frontend/.env
+    VITE_API_URL=http://localhost:3000
+    VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+    VITE_GOOGLE_CLIENT_ID=...
+    ```
+  </Step>
+
+  <Step title="Start MongoDB and Redis">
+    Make sure both services are running before starting the Backend.
+
+    <CodeGroup>
+
+    ```bash macOS (Homebrew)
+    brew services start mongodb-community
+    brew services start redis
+    ```
+
+    ```bash Ubuntu / Debian
+    sudo systemctl start mongod
+    sudo systemctl start redis
+    ```
+
+    ```bash Windows (WSL)
+    sudo service mongodb start
+    sudo service redis-server start
+    ```
+
+    </CodeGroup>
+  </Step>
+
+  <Step title="Start the Backend dev server">
+    From the `Backend/` directory:
+
+    ```bash
+    npm run dev
+    ```
+
+    The server starts with `nodemon` and reloads on file changes. You should see:
+
+    ```
+    Server running on http://localhost:3000
+    MongoDB connected
+    Connected to Redis
+    ```
+  </Step>
+
+  <Step title="Start the Frontend dev server">
+    From the `Frontend/` directory:
+
+    ```bash
+    npm run dev
+    ```
+
+    Vite starts the development server at `http://localhost:5173` by default.
+  </Step>
+</Steps>
+
+<Tip>
+  Run the Backend and Frontend dev servers in separate terminal windows or tabs so you can see logs from both simultaneously.
+</Tip>
+
+## Access the app
+
+Once both servers are running, open your browser to:
+
+| Service | URL |
+|---|---|
+| Frontend | `http://localhost:5173` |
+| Backend API | `http://localhost:3000/api` |
+
+## Production build
+
+To build and run both applications in production mode:
+
+<Steps>
+  <Step title="Build the Backend">
+    ```bash
+    cd Backend
+    npm run build
+    npm start
+    ```
+
+    `npm run build` compiles TypeScript to `dist/`. `npm start` runs the compiled output with `node dist/index.js`.
+  </Step>
+
+  <Step title="Build the Frontend">
+    ```bash
+    cd Frontend
+    npm run build
+    ```
+
+    `npm run build` runs `tsc -b && vite build` and outputs static files to `dist/`. Serve this directory with any static host (e.g. Vercel, Nginx).
+  </Step>
+</Steps>
+
+<Note>
+  The Frontend includes a `vercel.json` with a catch-all rewrite rule so that React Router handles client-side navigation correctly when deployed to Vercel.
+</Note>

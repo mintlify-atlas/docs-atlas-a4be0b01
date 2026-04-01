@@ -1,0 +1,357 @@
+---
+title: "Contracts endpoints"
+description: "Create, approve, cancel, and track contracts between clients and freelancers. Includes fund-release requests and admin access to all contracts."
+keywords: ["contracts", "create contract", "cancel contract", "fund release", "escrow", "contract status", "freelancer contract"]
+---
+
+Contracts are the central record binding a client, a freelancer, and a job together. Once a payment is completed via Stripe, a contract is created. The contract moves through a defined status lifecycle before funds are released from escrow.
+
+<Info>
+  Contract creation is triggered **after** a successful Stripe payment. See [Payments endpoints](/api/endpoints/payments) for the payment initiation flow.
+</Info>
+
+## Contract status lifecycle
+
+| Status | Description |
+|---|---|
+| `Pending` | Contract created, waiting for freelancer approval |
+| `Started` | Freelancer approved the contract |
+| `Ongoing` | Work is in progress |
+| `Completed` | Work is complete and fund release has been approved |
+| `Canceled` | Contract was canceled by either party |
+
+---
+
+## POST /api/client/create-contract/:jobId
+
+Create a contract for a job after payment has been processed. The authenticated client's ID is taken from the JWT.
+
+**Auth required:** Yes — `client` role
+
+### Path parameters
+
+<ParamField path="jobId" type="string" required>
+  MongoDB ObjectId of the job this contract is for.
+</ParamField>
+
+### Request body
+
+<ParamField body="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer being hired.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Contract value in INR. Should match the `rate` of the job.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the contract was created.
+</ResponseField>
+
+<ResponseField name="contract" type="object">
+  The newly created contract document.
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the contract.
+    </ResponseField>
+    <ResponseField name="contractId" type="string">
+      Human-readable contract identifier string.
+    </ResponseField>
+    <ResponseField name="jobId" type="string">
+      ObjectId of the associated job.
+    </ResponseField>
+    <ResponseField name="clientId" type="string">
+      ObjectId of the client.
+    </ResponseField>
+    <ResponseField name="freelancerId" type="string">
+      ObjectId of the freelancer.
+    </ResponseField>
+    <ResponseField name="amount" type="number">
+      Contract amount in INR.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Initial status: `Pending`.
+    </ResponseField>
+    <ResponseField name="isApproved" type="boolean">
+      `false` until the freelancer approves.
+    </ResponseField>
+    <ResponseField name="escrowPaid" type="boolean">
+      Whether the escrow amount has been funded via Stripe.
+    </ResponseField>
+    <ResponseField name="releaseFundStatus" type="string">
+      `NotRequested`, `Requested`, or `Approved`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/client/create-contract/64f1a2b3c4d5e6f7a8b9c0d4 \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "freelancerId": "64f1a2b3c4d5e6f7a8b9c0d6",
+    "amount": 50000
+  }'
+```
+
+---
+
+## DELETE /api/client/cancel-contract/:contractId
+
+Cancel a contract. Both the client and the freelancer can initiate cancellation. Canceling a contract while escrow is funded will trigger the refund flow.
+
+**Auth required:** Yes — `client` or `freelancer` role
+
+### Path parameters
+
+<ParamField path="contractId" type="string" required>
+  MongoDB ObjectId of the contract to cancel.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the contract was canceled.
+</ResponseField>
+
+<Warning>
+  Canceling a funded contract does not automatically process a refund. An admin must approve the refund via `PUT /api/admin/escrow/refund-client/:contractId/:clientId`. See [Payments endpoints](/api/endpoints/payments) for the full refund flow.
+</Warning>
+
+```bash cURL
+curl -X DELETE https://your-backend-domain.com/api/client/cancel-contract/64f1a2b3c4d5e6f7a8b9c0ef \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## GET /api/client/is-created/:jobId/:clientId
+
+Check whether a contract already exists for a given job and client. Use this to prevent duplicate contract creation.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="jobId" type="string" required>
+  MongoDB ObjectId of the job.
+</ParamField>
+
+<ParamField path="clientId" type="string" required>
+  MongoDB ObjectId of the client.
+</ParamField>
+
+### Response
+
+<ResponseField name="contract" type="object">
+  The existing contract document if one exists, or `null` if no contract has been created yet.
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/client/is-created/64f1a2b3c4d5e6f7a8b9c0d4/64f1a2b3c4d5e6f7a8b9c0d5"
+```
+
+---
+
+## GET /api/client/get-contracts/:clientId
+
+Retrieve all contracts belonging to a specific client.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="clientId" type="string" required>
+  MongoDB ObjectId of the client.
+</ParamField>
+
+### Response
+
+<ResponseField name="count" type="number">
+  Total number of contracts returned.
+</ResponseField>
+
+<ResponseField name="data" type="object[]">
+  Array of contract documents with populated `jobId`, `freelancerId`, and `clientId` references.
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/client/get-contracts/64f1a2b3c4d5e6f7a8b9c0d5"
+```
+
+---
+
+## GET /api/client/all-contracts
+
+Return all contracts across all users. Intended for admin dashboards and oversight tooling.
+
+**Auth required:** No (no middleware applied, but intended for admin use)
+
+<Warning>
+  This endpoint does not enforce authentication at the route level. You should restrict access to it at the infrastructure or proxy layer in production deployments.
+</Warning>
+
+### Response
+
+<ResponseField name="data" type="object[]">
+  Array of all contract documents across the platform.
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/client/all-contracts"
+```
+
+---
+
+## PATCH /api/client/release-fund/:contractId
+
+Request that the escrowed funds be released to the freelancer. This sets `releaseFundStatus` to `Requested`. An admin must then approve the release via the escrow endpoints.
+
+**Auth required:** Yes — `client` role
+
+### Path parameters
+
+<ParamField path="contractId" type="string" required>
+  MongoDB ObjectId of the contract.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the fund release request was recorded.
+</ResponseField>
+
+<Note>
+  Submitting a release request does not immediately transfer funds. The request enters a `Requested` state and must be approved by an admin through `PUT /api/admin/escrow/release-fund/:contractId`.
+</Note>
+
+```bash cURL
+curl -X PATCH https://your-backend-domain.com/api/client/release-fund/64f1a2b3c4d5e6f7a8b9c0ef \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## POST /api/freelancer/contract/approve-contract/:contractId/:freelancerId
+
+Freelancer accepts the contract, moving its status from `Pending` to `Started`.
+
+**Auth required:** Yes — `freelancer` role
+
+### Path parameters
+
+<ParamField path="contractId" type="string" required>
+  MongoDB ObjectId of the contract.
+</ParamField>
+
+<ParamField path="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer approving the contract.
+</ParamField>
+
+### Response
+
+Confirmation message and the updated contract document.
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/freelancer/contract/approve-contract/64f1a2b3c4d5e6f7a8b9c0ef/64f1a2b3c4d5e6f7a8b9c0d6 \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## GET /api/freelancer/contract/get-contracts/:freelancerId
+
+Retrieve all contracts for a specific freelancer.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer.
+</ParamField>
+
+### Response
+
+Array of contract documents associated with the freelancer.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/freelancer/contract/get-contracts/64f1a2b3c4d5e6f7a8b9c0d6"
+```
+
+---
+
+## GET /api/freelancer/contract/view-contract/:contractId
+
+Retrieve full details for a single contract including populated references.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="contractId" type="string" required>
+  MongoDB ObjectId of the contract.
+</ParamField>
+
+### Response
+
+The full contract document with populated `jobId`, `clientId`, and `freelancerId`.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/freelancer/contract/view-contract/64f1a2b3c4d5e6f7a8b9c0ef"
+```
+
+---
+
+## PUT /api/freelancer/contract/update-status/:contractId
+
+Update the working status of a contract (e.g., move from `Started` to `Ongoing`, or mark as `Completed`).
+
+**Auth required:** Yes — `freelancer` role
+
+### Path parameters
+
+<ParamField path="contractId" type="string" required>
+  MongoDB ObjectId of the contract.
+</ParamField>
+
+### Request body
+
+<ParamField body="status" type="string" required>
+  New status value. One of `Started`, `Ongoing`, `Completed`, or `Canceled`.
+</ParamField>
+
+### Response
+
+The updated contract document.
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/freelancer/contract/update-status/64f1a2b3c4d5e6f7a8b9c0ef \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{"status": "Ongoing"}'
+```
+
+---
+
+## GET /api/freelancer/contract/completed-works/:freelancerId
+
+Retrieve all contracts with status `Completed` for a given freelancer. Useful for portfolio and earnings history views.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer.
+</ParamField>
+
+### Response
+
+Array of completed contract documents.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/freelancer/contract/completed-works/64f1a2b3c4d5e6f7a8b9c0d6"
+```

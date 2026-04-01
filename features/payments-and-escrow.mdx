@@ -1,0 +1,142 @@
+---
+title: 'Payments and escrow'
+description: 'How Skillhouse uses escrow to protect both clients and freelancers — from Stripe checkout to wallet credit.'
+keywords: ['payments', 'escrow', 'Stripe', 'wallet', 'refund', 'fund release', 'transactions', 'earnings']
+---
+
+Skillhouse uses an escrow model to protect both parties in every engagement. When a client creates a contract, they pay upfront via Stripe. Those funds are held in escrow — neither the client nor the freelancer can touch them — until the work is complete and an admin authorises the release.
+
+---
+
+## How escrow works
+
+```
+Client pays via Stripe → Funds held in escrow → Client requests release
+→ Admin approves → Freelancer wallet credited
+```
+
+The escrow record tracks:
+
+- The **total amount** paid by the client
+- A **platform fee** deducted by Skillhouse
+- The **freelancer earning** (amount after platform fee)
+- The **status**: `funded`, `released`, `refunded`, or `canceled`
+
+The freelancer does not receive payment until an admin explicitly releases the funds. This protects clients from paying for undelivered work, and protects freelancers by ensuring funds are secured before they start.
+
+---
+
+## Making a payment (clients)
+
+<Steps>
+  <Step title="Create a contract">
+    After accepting a freelancer's proposal, create the contract from the job detail page. See [Contracts](/features/contracts) for this step.
+  </Step>
+  <Step title="Initiate the Stripe checkout">
+    From the contract page, click **Fund escrow** (or proceed to payment). Skillhouse creates a Stripe Checkout session for the contract amount.
+  </Step>
+  <Step title="Complete payment on the Stripe-hosted page">
+    You are redirected to a secure Stripe-hosted checkout page. Enter your card details and confirm the payment.
+  </Step>
+  <Step title="Return to Skillhouse">
+    On successful payment, Stripe redirects you back to the Skillhouse payment success page. The contract's `escrowPaid` flag is set to `true` and the contract status advances to **Started**.
+  </Step>
+  <Step title="Work begins">
+    The freelancer is notified that the contract is funded and can begin work.
+  </Step>
+</Steps>
+
+<Info>
+  All card processing happens on Stripe's servers. Skillhouse never stores or handles your card details directly.
+</Info>
+
+---
+
+## Releasing funds to a freelancer (clients)
+
+Once you are satisfied with the delivered work:
+
+1. Open the contract from your **Contracts** dashboard.
+2. Click **Release funds**.
+3. The release request is sent to an admin for review.
+4. The admin approves the release and the freelancer's wallet is credited with their earned amount (total minus platform fee).
+
+The contract status changes to **Completed** after the release is approved.
+
+---
+
+## Requesting a refund (clients)
+
+If a contract is cancelled and you need a refund of the escrowed funds:
+
+<Steps>
+  <Step title="Cancel the contract">
+    Cancel the contract from your **Contracts** dashboard, providing a reason. See [Contracts](/features/contracts) for cancellation steps.
+  </Step>
+  <Step title="Request a refund">
+    After cancellation, open the escrow record for the contract and click **Request refund**.
+  </Step>
+  <Step title="Admin processes the refund">
+    An admin reviews the cancellation and refund request. If approved, the escrow status changes to `refunded` and the amount is returned to your original payment method.
+  </Step>
+</Steps>
+
+<Warning>
+  Refunds are not automatic. They require admin review and approval. If there is a dispute about the work delivered, contact Skillhouse support to assist with resolution before requesting a refund.
+</Warning>
+
+---
+
+## Freelancer wallet
+
+When an admin releases funds for a completed contract, the earnings are credited to your Skillhouse wallet.
+
+- Access your wallet from the **Earnings** section of your freelancer dashboard.
+- Your wallet shows your current **balance** and a full list of past transactions.
+- Each transaction record includes the amount, description, type (credit or debit), date, and the associated contract.
+
+<Tip>
+  Use the **Sales report** in your dashboard to get a detailed breakdown of your earnings over time, useful for financial tracking and invoicing.
+</Tip>
+
+---
+
+## Transaction history
+
+Both clients and freelancers can view transaction records linked to their wallet:
+
+- Navigate to **Earnings → Transactions** in your dashboard.
+- Each entry shows the amount, transaction type, description, and date.
+- Transaction records are tied to specific contracts, so you can trace each entry back to the work it relates to.
+
+---
+
+## Stripe integration
+
+Skillhouse uses [Stripe Checkout](https://stripe.com/docs/payments/checkout) for payment processing. When a client initiates a payment:
+
+1. The backend creates a Checkout Session with the contract amount.
+2. The client is redirected to Stripe's hosted payment page.
+3. After payment, Stripe sends a webhook event to Skillhouse confirming the charge.
+4. Skillhouse marks the escrow as `funded` and the contract as **Started**.
+
+No card data ever passes through the Skillhouse backend.
+
+---
+
+## Platform fee
+
+Skillhouse deducts a platform fee from each escrow payment before crediting the freelancer. The fee is recorded on the escrow record. The freelancer earning displayed in the wallet reflects the amount after the platform fee has been deducted.
+
+---
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Contracts" icon="file-signature" href="/features/contracts">
+    The contract lifecycle and how fund release is initiated.
+  </Card>
+  <Card title="Admin role" icon="shield" href="/roles/admin">
+    How admins oversee escrow, release funds, and process refunds.
+  </Card>
+</CardGroup>

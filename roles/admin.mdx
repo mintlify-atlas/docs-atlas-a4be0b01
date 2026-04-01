@@ -1,0 +1,164 @@
+---
+title: 'Admin'
+description: 'How the admin role works on Skillhouse — managing users, categories, contracts, escrow, and platform revenue.'
+keywords: ['admin', 'dashboard', 'escrow', 'users', 'categories', 'skills', 'revenue', 'contracts']
+---
+
+The admin role is distinct from [Freelancer](/roles/freelancer) and [Client](/roles/client). Admins are platform operators who manage the health of the marketplace — they do not post jobs or submit proposals. Instead, they oversee users, configure the platform, manage escrow funds, and monitor revenue.
+
+<Warning>
+  Admin access is restricted to designated platform operators. Standard freelancer and client accounts cannot escalate to admin. If a blocked user attempts to access the platform, they receive a forbidden error regardless of their credentials.
+</Warning>
+
+<CardGroup cols={2}>
+  <Card title="Dashboard" icon="chart-line" href="/roles/admin#dashboard-overview">
+    View total revenue, escrow balance, and user counts at a glance with a monthly sales chart.
+  </Card>
+  <Card title="User management" icon="users" href="/roles/admin#managing-users">
+    List all freelancers and clients, and block or unblock accounts.
+  </Card>
+  <Card title="Categories & skills" icon="tags" href="/roles/admin#managing-categories-and-skills">
+    Add and edit the job categories and skills that clients and freelancers use across the platform.
+  </Card>
+  <Card title="Contracts" icon="file-contract" href="/roles/admin#overseeing-contracts">
+    View all contracts across the platform regardless of which users created them.
+  </Card>
+  <Card title="Escrow management" icon="lock" href="/roles/admin#escrow-management">
+    Release funds to freelancers and process refunds to clients after work is approved or disputed.
+  </Card>
+  <Card title="Revenue tracking" icon="dollar-sign" href="/roles/admin#revenue-tracking">
+    Monitor total platform revenue, transaction history, and download sales reports.
+  </Card>
+</CardGroup>
+
+---
+
+## Dashboard overview
+
+The admin dashboard gives a real-time snapshot of platform activity. Navigate to **Dashboard** in the admin sidebar to see:
+
+- **Escrow balance** — the total funds currently held in escrow across all active contracts
+- **Total revenue** — cumulative platform fees collected to date
+- **Total clients** — the number of registered client accounts
+- **Total freelancers** — the number of registered freelancer accounts
+- **Monthly sales chart** — a line graph showing total revenue, freelancer earnings, and platform fees broken down by month
+
+<Info>
+  The monthly sales chart uses live transaction data, so it updates as new contracts are completed and funds are released.
+</Info>
+
+---
+
+## Managing users
+
+Navigate to **Freelancers** or **Clients** in the admin sidebar to view all registered accounts for each role.
+
+Each user listing shows account details. From here you can:
+
+- **Block an account** — prevents the user from logging in or accessing any platform features. A blocked user receives a forbidden error on any authenticated request.
+- **Unblock an account** — restores full access to a previously blocked account.
+
+<Warning>
+  Blocking a user takes effect immediately. Any active sessions for that user are rejected on their next API call. Use this action carefully, as it disrupts any ongoing contracts the user may have.
+</Warning>
+
+<Accordion title="How blocking is enforced">
+  Every authenticated request passes through the platform's auth middleware, which checks the user's `status` field in the database after verifying their JWT. If `status` is `"blocked"`, the request is rejected with a `403 Forbidden` response before reaching any route handler. This means a blocked user cannot browse jobs, access contracts, or use chat.
+</Accordion>
+
+---
+
+## Managing categories and skills
+
+Categories and skills are the taxonomy that clients use when posting jobs and freelancers use when setting up their profiles. Only admins can create and manage them.
+
+### Job categories
+
+Navigate to **Job Categories** in the admin sidebar.
+
+- **Add a category** — create a new category (e.g. "Web Development", "Graphic Design") that clients can select when posting a job
+- **Edit a category** — update the name of an existing category
+- **List / unlist a category** — listing makes a category available for selection; unlisting hides it from new job postings without deleting historical data
+
+### Skills
+
+Navigate to **Skills** in the admin sidebar.
+
+- **Add a skill** — create a new skill tag (e.g. "React", "Figma") that freelancers can add to their profiles and clients can require in job listings
+- **Edit a skill** — update the name of an existing skill
+- **List / unlist a skill** — controls whether a skill appears as a selectable option across the platform
+
+<Tip>
+  Keep category and skill names consistent and concise. Clients and freelancers both rely on these to find the right match, so vague or duplicate entries reduce search quality.
+</Tip>
+
+---
+
+## Overseeing contracts
+
+Navigate to **Contracts** in the admin sidebar to view every contract on the platform — across all clients and freelancers.
+
+Each contract entry shows:
+- The linked job title
+- The client and freelancer involved
+- The contract status (active, completed, cancelled)
+- The payment amount held in escrow
+
+Click any contract to open its full details.
+
+<Info>
+  This view is read-only for browsing. Fund releases and refunds are handled through the escrow management section.
+</Info>
+
+---
+
+## Escrow management
+
+Navigate to **Payments** in the admin sidebar to manage escrow actions.
+
+When a client approves completed work, they request a fund release. The admin then acts on that request:
+
+<Steps>
+  <Step title="Identify the contract">
+    From the Payments or Contracts view, find the contract where the client has requested a fund release.
+  </Step>
+  <Step title="Release funds to the freelancer">
+    Click **Release Funds** on the contract. The escrowed amount is credited to the freelancer's wallet, minus the platform fee.
+  </Step>
+</Steps>
+
+If a contract is cancelled or the client raises a dispute, the admin can process a refund:
+
+<Steps>
+  <Step title="Locate the cancelled contract">
+    Find the contract in the Payments view.
+  </Step>
+  <Step title="Refund to client">
+    Click **Refund Client** to return the escrowed funds to the client's account.
+  </Step>
+</Steps>
+
+<Note>
+  Fund releases and refunds are irreversible once processed. Confirm the contract status and the client's approval before taking action.
+</Note>
+
+See [Payments and escrow](/features/payments-and-escrow) for the full escrow lifecycle.
+
+---
+
+## Revenue tracking
+
+The platform collects a fee on each completed contract. Admins can monitor this from multiple views:
+
+- **Total revenue** — shown on the dashboard as a running total of all platform fees collected
+- **Transaction history** — a full log of escrow transactions including contract references, amounts, freelancer earnings, and platform fees
+- **Sales report** — a downloadable report of all transactions, useful for financial reporting and audits
+
+The dashboard chart breaks each month's activity into three lines:
+- **Total revenue** — the full contract value processed
+- **Freelancer earnings** — the portion paid out to freelancers
+- **Platform earnings** — the fee retained by the platform
+
+<Info>
+  Sales reports pull from the same transaction data shown in the chart and transaction history, so numbers are consistent across all views.
+</Info>

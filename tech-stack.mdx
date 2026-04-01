@@ -1,0 +1,197 @@
+---
+title: "Tech stack"
+description: "Technologies powering Skillhouse"
+---
+
+Skillhouse is a TypeScript-first application across both frontend and backend. The stack is chosen for developer productivity, real-time capability, and reliable payment handling.
+
+## Overview
+
+<CardGroup cols={2}>
+  <Card title="Frontend" icon="monitor">
+    React 18, Vite, TypeScript, TailwindCSS, Shadcn/ui, Redux Toolkit
+  </Card>
+  <Card title="Backend" icon="server">
+    Node.js, Express, TypeScript, MongoDB with Mongoose
+  </Card>
+  <Card title="Payments" icon="credit-card">
+    Stripe — escrow, refunds, and webhooks
+  </Card>
+  <Card title="Real-time" icon="bolt">
+    Socket.io for live chat between clients and freelancers
+  </Card>
+  <Card title="Authentication" icon="lock">
+    JWT, Google OAuth via google-auth-library, bcrypt password hashing
+  </Card>
+  <Card title="Storage" icon="image">
+    Cloudinary for images and video uploads
+  </Card>
+  <Card title="Email and OTP" icon="envelope">
+    Nodemailer for transactional email, Redis for OTP and password reset tokens
+  </Card>
+  <Card title="Architecture" icon="layer-group">
+    Repository Pattern, MVC, structured logging with Winston
+  </Card>
+</CardGroup>
+
+---
+
+## Frontend
+
+The frontend is a single-page application built with React and bundled with Vite for fast development iteration and optimized production builds.
+
+| Technology | Version | Purpose |
+|---|---|---|
+| React | ^18.3.1 | UI framework |
+| Vite | ^6.2.0 | Build tool and dev server |
+| TypeScript | ~5.7.2 | Type safety across the codebase |
+| TailwindCSS | ^3.4.17 | Utility-first styling |
+| Radix UI / Shadcn/ui | various | Accessible, unstyled component primitives |
+| Redux Toolkit | ^2.6.0 | Global state management |
+| react-redux | ^9.2.0 | React bindings for Redux |
+| redux-persist | ^6.0.0 | Persists Redux state across page reloads |
+| react-router-dom | ^7.2.0 | Client-side routing |
+| axios | ^1.8.1 | HTTP client for API requests |
+| socket.io-client | ^4.8.1 | WebSocket client for real-time chat |
+| @stripe/react-stripe-js | ^3.5.1 | Stripe payment UI components |
+| @stripe/stripe-js | ^6.1.0 | Stripe.js browser SDK |
+| @react-oauth/google | ^0.12.1 | Google OAuth sign-in button |
+| framer-motion | ^12.4.7 | Animations and transitions |
+| lucide-react | ^0.475.0 | Icon library |
+| recharts | ^2.15.2 | Charts for admin analytics dashboard |
+| dayjs | ^1.11.13 | Date formatting and manipulation |
+| react-hot-toast | ^2.5.2 | Toast notifications |
+| jspdf | ^3.0.1 | PDF export for contracts |
+
+<Note>
+  Shadcn/ui components are built on top of Radix UI primitives. They are copied directly into the project under `src/components/ui/` rather than installed as a package dependency, which is why they do not appear as a top-level dependency in `package.json`.
+</Note>
+
+---
+
+## Backend
+
+The backend is a Node.js/Express application written entirely in TypeScript, following the Repository Pattern and MVC architecture for clean separation of concerns.
+
+| Technology | Version | Purpose |
+|---|---|---|
+| Node.js | — | Runtime environment |
+| Express | ^4.21.2 | HTTP server framework |
+| TypeScript | ^5.7.3 | Type safety |
+| Mongoose | ^8.10.1 | MongoDB ODM |
+| socket.io | ^4.8.1 | WebSocket server for real-time chat |
+| jsonwebtoken | ^9.0.2 | JWT generation and verification |
+| bcrypt | ^5.1.1 | Password hashing |
+| google-auth-library | ^9.15.1 | Google OAuth token verification |
+| stripe | ^17.7.0 | Payment processing and webhooks |
+| cloudinary | ^1.41.3 | Image and video upload management |
+| multer | ^1.4.5-lts.1 | Multipart file upload handling |
+| multer-storage-cloudinary | ^4.0.0 | Cloudinary storage engine for Multer |
+| nodemailer | ^6.10.0 | Transactional email (OTP, notifications) |
+| redis | ^4.7.0 | OTP storage and password reset tokens |
+| express-validator | ^7.2.1 | Request input validation |
+| winston | ^3.17.0 | Structured application logging |
+| winston-daily-rotate-file | ^5.0.0 | Log rotation for production |
+| morgan | ^1.10.0 | HTTP request logging middleware |
+| dotenv | ^16.4.7 | Environment variable loading |
+| cookie-parser | ^1.4.7 | Cookie parsing middleware |
+| cors | ^2.8.5 | Cross-origin resource sharing |
+
+### API route structure
+
+The backend exposes routes under the `/api` prefix:
+
+| Prefix | Description |
+|---|---|
+| `/api/auth` | Registration, login, OTP, Google OAuth |
+| `/api/client` | Job posting, proposals, contracts (client) |
+| `/api/freelancer` | Job browsing, proposals, contracts (freelancer) |
+| `/api/admin` | User management, contract oversight, payments |
+| `/api/media` | File and message media endpoints |
+| `/webhook` | Stripe webhook receiver (raw body) |
+
+---
+
+## Payments
+
+Skillhouse uses **Stripe** (`^17.7.0`) for all payment processing.
+
+- When a client accepts a proposal, they are redirected to a Stripe-hosted checkout to pay the contract amount
+- The payment is captured and held in Skillhouse's escrow wallet — it is not transferred to the freelancer immediately
+- When the client approves delivery and the admin confirms, a Stripe transfer releases the funds to the freelancer
+- Stripe webhooks notify the backend of payment events (checkout completed, transfer succeeded, refund issued)
+- The `/webhook` route receives raw Stripe webhook payloads and uses the Stripe SDK to verify the signature before processing
+
+<Warning>
+  The `/webhook` route uses `express.raw({ type: "application/json" })` middleware. Standard `express.json()` middleware must not be applied to this route, as it would break Stripe's webhook signature verification.
+</Warning>
+
+---
+
+## Real-time
+
+Real-time features are powered by **Socket.io** (`^4.8.1` on both server and client).
+
+- A persistent WebSocket connection is established when a user opens the chat interface
+- Messages are delivered in real-time between the client and freelancer on a shared contract
+- The socket server is initialised on the same HTTP server instance as Express, listening on the same port
+
+---
+
+## Authentication
+
+Skillhouse supports two authentication methods:
+
+**Email and password**
+- Passwords are hashed with bcrypt (`^5.1.1`) before storage
+- On login, a JWT is signed with `jsonwebtoken` (`^9.0.2`) and returned as an HTTP-only cookie
+- Short-lived access tokens are paired with refresh token rotation
+
+**Google OAuth**
+- The frontend uses `@react-oauth/google` (`^0.12.1`) to obtain a Google ID token
+- The backend verifies the ID token using `google-auth-library` (`^9.15.1`) and issues a Skillhouse JWT on success
+
+**Email OTP**
+- On registration, a one-time password is generated, stored in Redis (`^4.7.0`) with a TTL, and emailed via Nodemailer (`^6.10.0`)
+- Redis is also used for password reset tokens
+
+---
+
+## Storage
+
+User-uploaded files (profile photos, portfolio images, portfolio videos) are stored on **Cloudinary** (`^1.41.3`).
+
+- Uploads are handled server-side using Multer (`^1.4.5-lts.1`) with the `multer-storage-cloudinary` (`^4.0.0`) storage engine
+- Cloudinary URLs are stored in MongoDB and served directly to the frontend
+
+---
+
+## Email and OTP
+
+**Nodemailer** (`^6.10.0`) handles all outbound email, including:
+
+- OTP delivery on registration
+- Password reset links
+- Contract and payment notifications
+
+**Redis** (`^4.7.0`) stores OTP and password reset tokens with short TTLs to prevent reuse after expiry.
+
+---
+
+## Architecture
+
+The backend follows the **Repository Pattern** layered over MVC:
+
+- **Routes** — define API endpoints and attach middleware
+- **Controllers** — handle HTTP request/response logic
+- **Services** — contain business logic, orchestrate repository calls
+- **Repositories** — abstract database access; all Mongoose queries live here
+- **Models** — Mongoose schemas and document types
+
+This separation keeps database logic decoupled from business logic, making it straightforward to test services independently of MongoDB.
+
+Logging uses **Winston** (`^3.17.0`) with daily log rotation via `winston-daily-rotate-file` (`^5.0.0`). HTTP request logs are captured by **Morgan** (`^1.10.0`) and piped into the Winston transport.
+
+<Tip>
+  For environment variable requirements for each layer of the stack, see the [environment variables reference](/deployment/environment-variables).
+</Tip>

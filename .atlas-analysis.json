@@ -1,0 +1,111 @@
+{
+  "projectType": "saas",
+  "projectName": "Skillhouse",
+  "projectDescription": "A full-stack freelance marketplace platform built with the MERN stack that connects Freelancers, Clients, and Admins with role-based access, escrow payments via Stripe, real-time chat, and project lifecycle management.",
+  "theme": "almond",
+  "primaryColor": "#222222",
+  "lightColor": "#72bbc6",
+  "darkColor": "#d684a5",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "tech-stack"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/authentication",
+              "features/jobs-and-proposals",
+              "features/contracts",
+              "features/payments-and-escrow",
+              "features/chat",
+              "features/reviews"
+            ]
+          },
+          {
+            "group": "User Roles",
+            "pages": [
+              "roles/freelancer",
+              "roles/client",
+              "roles/admin"
+            ]
+          },
+          {
+            "group": "Deployment & Configuration",
+            "pages": [
+              "deployment/environment-variables",
+              "deployment/running-locally",
+              "deployment/architecture"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview",
+              "api/authentication"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api/endpoints/auth",
+              "api/endpoints/jobs",
+              "api/endpoints/contracts",
+              "api/endpoints/payments",
+              "api/endpoints/freelancer",
+              "api/endpoints/admin"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Role-based authentication (Freelancer, Client, Admin) using JWT with Google OAuth support",
+    "Escrow wallet system with Stripe payment integration for secure fund holding, release, and refund",
+    "Full project and contract lifecycle management from job posting to completion",
+    "Real-time chat between clients and freelancers via Socket.io with media sharing",
+    "Smart bot assistant for handling common queries",
+    "Proposal and offer workflow for job applications",
+    "Admin dashboard with revenue, escrow balance, and user tracking",
+    "OTP-based email verification and password reset via Redis and Nodemailer",
+    "Freelancer reviews and ratings system",
+    "Cloudinary media storage for profile images and chat attachments"
+  ],
+  "publicApiSurface": [
+    "POST /api/auth/register",
+    "POST /api/auth/login",
+    "POST /api/auth/google-login",
+    "POST /api/auth/verify-otp",
+    "POST /api/auth/forgot-password",
+    "GET /api/client/get-jobs",
+    "POST /api/client/create-job",
+    "PUT /api/client/update-job/:id",
+    "POST /api/client/payment/:jobId",
+    "POST /api/client/create-contract/:jobId",
+    "PATCH /api/client/release-fund/:contractId",
+    "POST /api/client/rate-freelancer/:clientId",
+    "POST /api/freelancer/apply-job/:jobId",
+    "GET /api/freelancer/applied-jobs",
+    "GET /api/freelancer/earnings/:userId",
+    "GET /api/freelancer/transactions/:walletId",
+    "GET /api/admin/total-revenue",
+    "GET /api/admin/balance",
+    "PUT /api/admin/release-fund/:contractId",
+    "PUT /api/admin/refund-client/:contractId/:clientId",
+    "POST /api/media/upload"
+  ]
+}

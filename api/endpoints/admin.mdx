@@ -1,0 +1,621 @@
+---
+title: "Admin endpoints"
+description: "Manage users, job categories, skills, escrow funds, and platform revenue. All endpoints require admin-level authentication."
+keywords: ["admin", "user management", "block user", "categories", "skills", "escrow", "revenue", "transactions", "sales report"]
+---
+
+Admin endpoints are organized under the `/api/admin` prefix with sub-routes for users (`/users`), categories (`/categories`), skills (`/skills`), and escrow (`/escrow`).
+
+<Warning>
+  All endpoints on this page require a valid JWT with the `admin` role. Requests from `client` or `freelancer` roles receive a `403 Forbidden` response. The only exception is `PUT /api/admin/escrow/refund-client`, which also accepts the `client` role.
+</Warning>
+
+---
+
+## User management
+
+### GET /api/admin/users/get-clients
+
+Retrieve a list of all registered client accounts.
+
+**Auth required:** Yes — `admin` role
+
+### Response
+
+Array of client user objects including `name`, `email`, `status`, `role`, and profile details.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/admin/users/get-clients" \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### GET /api/admin/users/get-freelancers
+
+Retrieve a list of all registered freelancer accounts.
+
+**Auth required:** Yes — `admin` role
+
+### Response
+
+Array of freelancer user objects including `name`, `email`, `status`, `role`, and profile details.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/admin/users/get-freelancers" \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### PUT /api/admin/users/block-freelancer/:freelancerId
+
+Block a freelancer account. The user's `status` is set to `blocked`, preventing login.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer to block.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the account was blocked.
+</ResponseField>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/users/block-freelancer/64f1a2b3c4d5e6f7a8b9c0d6 \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### PUT /api/admin/users/unblock-freelancer/:freelancerId
+
+Restore access to a blocked freelancer account.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer to unblock.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the account was unblocked.
+</ResponseField>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/users/unblock-freelancer/64f1a2b3c4d5e6f7a8b9c0d6 \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### PUT /api/admin/users/block-client/:clientId
+
+Block a client account, preventing login and job posting.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="clientId" type="string" required>
+  MongoDB ObjectId of the client to block.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the account was blocked.
+</ResponseField>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/users/block-client/64f1a2b3c4d5e6f7a8b9c0d5 \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### PUT /api/admin/users/unblock-client/:clientId
+
+Restore access to a blocked client account.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="clientId" type="string" required>
+  MongoDB ObjectId of the client to unblock.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the account was unblocked.
+</ResponseField>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/users/unblock-client/64f1a2b3c4d5e6f7a8b9c0d5 \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+## Category management
+
+### POST /api/admin/categories/add-category
+
+Create a new job category.
+
+**Auth required:** Yes — `admin` role
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  Display name for the category (e.g., `"Web Development"`).
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the category was added.
+</ResponseField>
+
+<ResponseField name="category" type="object">
+  The created category document.
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the category.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Category name.
+    </ResponseField>
+    <ResponseField name="isListed" type="boolean">
+      Visibility status. Defaults to `true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/admin/categories/add-category \
+  -H "Authorization: Bearer <adminAccessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Mobile Development"}'
+```
+
+---
+
+### PUT /api/admin/categories/edit-category/:id
+
+Update an existing category's name.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the category to update.
+</ParamField>
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  New category name.
+</ParamField>
+
+### Response
+
+The updated category document.
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/categories/edit-category/64f1a2b3c4d5e6f7a8b9c0d1 \
+  -H "Authorization: Bearer <adminAccessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "iOS & Android Development"}'
+```
+
+---
+
+### GET /api/admin/categories/get-categories
+
+Retrieve all job categories. This endpoint is publicly accessible and is used to populate category dropdowns on job creation forms.
+
+**Auth required:** No
+
+### Response
+
+Array of category objects with `_id`, `name`, and `isListed`.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/admin/categories/get-categories"
+```
+
+---
+
+### PUT /api/admin/categories/list-category/:id
+
+Set a category's `isListed` to `true`, making it visible in the job creation form.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the category.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the category was listed.
+</ResponseField>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/categories/list-category/64f1a2b3c4d5e6f7a8b9c0d1 \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### PUT /api/admin/categories/unlist-category/:id
+
+Set a category's `isListed` to `false`, hiding it from the job creation form without deleting it.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the category.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the category was unlisted.
+</ResponseField>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/categories/unlist-category/64f1a2b3c4d5e6f7a8b9c0d1 \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+## Skills management
+
+### POST /api/admin/skills/add-skills
+
+Add a new skill to the platform's skill library.
+
+**Auth required:** Yes — `admin` role
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  Display name for the skill (e.g., `"React"`).
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the skill was added.
+</ResponseField>
+
+<ResponseField name="skill" type="object">
+  The created skill document.
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the skill.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Skill name.
+    </ResponseField>
+    <ResponseField name="isListed" type="boolean">
+      Visibility status. Defaults to `true`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/admin/skills/add-skills \
+  -H "Authorization: Bearer <adminAccessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "TypeScript"}'
+```
+
+---
+
+### PUT /api/admin/skills/edit-skills/:id
+
+Update an existing skill's name.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the skill to update.
+</ParamField>
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  New skill name.
+</ParamField>
+
+### Response
+
+The updated skill document.
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/skills/edit-skills/64f1a2b3c4d5e6f7a8b9c0d2 \
+  -H "Authorization: Bearer <adminAccessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "TypeScript 5"}'
+```
+
+---
+
+### GET /api/admin/skills/get-skills
+
+Retrieve all skills. Publicly accessible; used to populate skill-selection dropdowns.
+
+**Auth required:** No
+
+### Response
+
+Array of skill objects with `_id`, `name`, and `isListed`.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/admin/skills/get-skills"
+```
+
+---
+
+### PUT /api/admin/skills/list-skills/:id
+
+Set a skill's `isListed` to `true`.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the skill.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the skill was listed.
+</ResponseField>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/skills/list-skills/64f1a2b3c4d5e6f7a8b9c0d2 \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### PUT /api/admin/skills/unlist-skills/:id
+
+Set a skill's `isListed` to `false`, hiding it from skill-selection dropdowns without deleting it.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the skill.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the skill was unlisted.
+</ResponseField>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/skills/unlist-skills/64f1a2b3c4d5e6f7a8b9c0d2 \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+## Escrow management
+
+### GET /api/admin/escrow/total-revenue
+
+Retrieve the total platform revenue earned from all completed transactions. Platform revenue is the sum of all `platformFee` values on escrow records.
+
+**Auth required:** Yes — `admin` role
+
+### Response
+
+<ResponseField name="data" type="number">
+  Total platform revenue in INR.
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/admin/escrow/total-revenue" \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### GET /api/admin/escrow/balance
+
+Retrieve the total amount currently held in escrow across all active contracts.
+
+**Auth required:** Yes — `admin` role
+
+### Response
+
+<ResponseField name="data" type="number">
+  Total escrow balance in INR — sum of `amount` on all `funded` escrow records.
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/admin/escrow/balance" \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### PUT /api/admin/escrow/release-fund/:contractId
+
+Approve a pending fund-release request and transfer earnings to the freelancer's wallet. See [Payments endpoints](/api/endpoints/payments) for full context.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="contractId" type="string" required>
+  MongoDB ObjectId of the contract.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the funds were released.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated escrow record with `status: "released"`.
+</ResponseField>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/escrow/release-fund/64f1a2b3c4d5e6f7a8b9c0ef \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### PUT /api/admin/escrow/refund-client/:contractId/:clientId
+
+Refund the escrowed amount to the client's wallet for a canceled or disputed contract. See [Payments endpoints](/api/endpoints/payments) for full context.
+
+**Auth required:** Yes — `admin` or `client` role
+
+### Path parameters
+
+<ParamField path="contractId" type="string" required>
+  MongoDB ObjectId of the contract.
+</ParamField>
+
+<ParamField path="clientId" type="string" required>
+  MongoDB ObjectId of the client to refund.
+</ParamField>
+
+### Request body
+
+<ParamField body="cancelReason" type="string">
+  Short reason code for the refund.
+</ParamField>
+
+<ParamField body="cancelReasonDescription" type="string">
+  Detailed explanation of the reason.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the refund was processed.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated escrow record with `status: "refunded"`.
+</ResponseField>
+
+```bash cURL
+curl -X PUT "https://your-backend-domain.com/api/admin/escrow/refund-client/64f1a2b3c4d5e6f7a8b9c0ef/64f1a2b3c4d5e6f7a8b9c0d5" \
+  -H "Authorization: Bearer <adminAccessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cancelReason": "dispute",
+    "cancelReasonDescription": "Client reported incomplete deliverables."
+  }'
+```
+
+---
+
+### GET /api/admin/escrow/transactions
+
+Retrieve a full list of all escrow transactions across the platform.
+
+**Auth required:** Yes — `admin` role
+
+### Response
+
+<ResponseField name="count" type="number">
+  Total number of escrow transaction records.
+</ResponseField>
+
+<ResponseField name="data" type="object[]">
+  Array of escrow transaction documents.
+  <Expandable title="escrow record properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId.
+    </ResponseField>
+    <ResponseField name="clientId" type="string">
+      ObjectId of the client.
+    </ResponseField>
+    <ResponseField name="freelancerId" type="string">
+      ObjectId of the freelancer.
+    </ResponseField>
+    <ResponseField name="contractId" type="string">
+      ObjectId of the contract.
+    </ResponseField>
+    <ResponseField name="jobId" type="string">
+      ObjectId of the job.
+    </ResponseField>
+    <ResponseField name="amount" type="number">
+      Total amount held/processed in INR.
+    </ResponseField>
+    <ResponseField name="platformFee" type="number">
+      Platform commission amount in INR.
+    </ResponseField>
+    <ResponseField name="freelancerEarning" type="number">
+      Amount credited to the freelancer after the platform fee.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `funded`, `released`, `refunded`, or `canceled`.
+    </ResponseField>
+    <ResponseField name="transactionType" type="string">
+      `credit` or `debit`.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/admin/escrow/transactions" \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+### GET /api/admin/escrow/sales-report
+
+Retrieve aggregated sales data for admin reporting and dashboard charts. Returns the same escrow transaction dataset as `/transactions` — apply your own aggregation or use the frontend charting layer.
+
+**Auth required:** Yes — `admin` role
+
+### Response
+
+Same response shape as [GET /api/admin/escrow/transactions](#get-apiadminescrowtransactions).
+
+```bash cURL
+curl "https://your-backend-domain.com/api/admin/escrow/sales-report" \
+  -H "Authorization: Bearer <adminAccessToken>"
+```

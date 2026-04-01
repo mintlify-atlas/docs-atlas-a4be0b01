@@ -1,0 +1,221 @@
+---
+title: "Authentication"
+description: "How to authenticate API requests using JWT access tokens, refresh tokens, and Google OAuth."
+keywords: ["authentication", "jwt", "bearer token", "refresh token", "google oauth", "login", "access token"]
+---
+
+The Skillhouse API uses JWT-based authentication. When you log in, you receive a short-lived access token and a long-lived refresh token. Include the access token on every protected request.
+
+## How it works
+
+<Steps>
+  <Step title="Log in">
+    Call `POST /api/auth/login` with your email and password. The response includes an `accessToken` and sets an httpOnly `refreshToken` cookie.
+  </Step>
+  <Step title="Send authenticated requests">
+    Include the access token in the `Authorization` header as `Bearer <accessToken>`.
+  </Step>
+  <Step title="Refresh when expired">
+    Access tokens expire after **2 hours**. Call `POST /api/auth/refresh-token` to get a new one using the refresh token cookie.
+  </Step>
+</Steps>
+
+## Token lifetimes
+
+| Token | Lifetime | Transport |
+|---|---|---|
+| Access token | 2 hours | Response body |
+| Refresh token | 7 days | HttpOnly cookie |
+
+## Logging in
+
+### POST /api/auth/login
+
+Authenticates a user with email and password. Returns an access token in the response body and sets a `refreshToken` httpOnly cookie.
+
+**Request body**
+
+<ParamField body="email" type="string" required>
+  The user's email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The user's password.
+</ParamField>
+
+**Response**
+
+<ResponseField name="message" type="string">
+  Human-readable result message.
+</ResponseField>
+
+<ResponseField name="accessToken" type="string">
+  JWT access token. Include this in the `Authorization` header for subsequent requests.
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  The authenticated user's role: `client`, `freelancer`, or `admin`.
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  <Expandable title="properties">
+    <ResponseField name="id" type="string">
+      Unique user identifier.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name.
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      Email address.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Account status: `active` or `blocked`.
+    </ResponseField>
+    <ResponseField name="profilePic" type="string">
+      Profile picture URL, or an empty string if not set.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<CodeGroup>
+
+```bash login
+curl -X POST https://your-api-domain.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "yourpassword"}'
+```
+
+```json response
+{
+  "message": "Login successful",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "role": "client",
+  "user": {
+    "id": "64f1a2b3c4d5e6f7a8b9c0d1",
+    "name": "Alex Johnson",
+    "email": "user@example.com",
+    "status": "active",
+    "profilePic": ""
+  }
+}
+```
+
+</CodeGroup>
+
+## Making authenticated requests
+
+Pass the access token in the `Authorization` header using the `Bearer` scheme.
+
+```bash
+curl https://your-api-domain.com/api/client/get-jobs \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+Browser-based clients that rely on cookies do not need to attach the header manually — the `refreshToken` cookie is sent automatically with same-origin requests.
+
+<Warning>
+  Never expose your access token in client-side code, URLs, or logs. Store it in memory (not `localStorage`) in browser applications.
+</Warning>
+
+## Refreshing an access token
+
+### POST /api/auth/refresh-token
+
+Issues a new access token using the `refreshToken` cookie. No request body is needed — the cookie is read automatically.
+
+```bash
+curl -X POST https://your-api-domain.com/api/auth/refresh-token \
+  --cookie "refreshToken=YOUR_REFRESH_TOKEN"
+```
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+Call this endpoint when a protected request returns a `401` with the message `"Invalid token"` or `"Token is required"`.
+
+## Google OAuth login
+
+### POST /api/auth/google-login
+
+Authenticates a user with a Google credential token. If no Skillhouse account exists for the Google email, a new account is created automatically.
+
+<ParamField body="token" type="string" required>
+  The credential token returned by the Google Identity Services SDK after the user completes the Google sign-in flow.
+</ParamField>
+
+<ParamField body="role" type="string" required>
+  The role to assign if a new account is created: `client` or `freelancer`. Ignored for existing accounts.
+</ParamField>
+
+The response shape is identical to a standard login response — you receive an `accessToken` and the user object, and the `refreshToken` cookie is set.
+
+```bash
+curl -X POST https://your-api-domain.com/api/auth/google-login \
+  -H "Content-Type: application/json" \
+  -d '{"token": "GOOGLE_CREDENTIAL_TOKEN", "role": "freelancer"}'
+```
+
+## Role-based access
+
+After authentication, each request is checked against the role encoded in the JWT. Some endpoints are restricted to specific roles.
+
+| Role | Access |
+|---|---|
+| `client` | Client job posting, contracts, and payment endpoints |
+| `freelancer` | Freelancer application, contract, and wallet endpoints |
+| `admin` | Admin user management, category, escrow, and revenue endpoints |
+
+<Tip>
+  Your role is returned in the login response and encoded in the JWT. You cannot change your role after registration.
+</Tip>
+
+## Error responses
+
+### 401 Unauthorized
+
+Returned when the token is missing, expired, or invalid. Re-authenticate by calling `/api/auth/login` or refresh your access token with `/api/auth/refresh-token`.
+
+```json
+{
+  "message": "Invalid token",
+  "status": 401
+}
+```
+
+### 403 Forbidden
+
+Returned when your token is valid but your role does not have permission to access the endpoint.
+
+```json
+{
+  "message": "Access denied",
+  "status": 403
+}
+```
+
+A `403` can also be returned if your account has been blocked by an admin. In that case, re-authenticating will not resolve the error.
+
+## Logging out
+
+### POST /api/auth/logout
+
+Clears the `refreshToken` cookie. After logging out, the access token you hold remains valid until it expires (up to 2 hours). Discard it client-side immediately.
+
+```bash
+curl -X POST https://your-api-domain.com/api/auth/logout \
+  --cookie "refreshToken=YOUR_REFRESH_TOKEN"
+```
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Auth endpoints" icon="lock" href="/api/endpoints/auth">
+    Full reference for all `/api/auth/*` routes including registration and password reset.
+  </Card>
+  <Card title="Authentication feature" icon="shield-check" href="/features/authentication">
+    Overview of how authentication works across the Skillhouse platform.
+  </Card>
+</CardGroup>

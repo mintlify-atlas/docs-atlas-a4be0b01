@@ -1,97 +1,61 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Welcome to Skillhouse"
+description: "A modern freelance marketplace connecting clients, freelancers, and admins with secure escrow payments, real-time chat, and full project lifecycle management."
 ---
 
-## Setting up
+Skillhouse is a full-stack freelance marketplace built on the MERN stack. It brings together **Clients** who need work done, **Freelancers** who do the work, and **Admins** who oversee the platform — all within a single, secure environment.
 
-Get your documentation site up and running in minutes.
+Payments are protected through an escrow system powered by Stripe. Contracts move through a structured lifecycle from job post to completion. Communication happens in real time via built-in chat.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get up and running with Skillhouse in minutes — create an account, post a job or apply as a freelancer.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Core Features" icon="star" href="/features/authentication">
+    Explore authentication, jobs, contracts, payments, chat, and reviews.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="User Roles" icon="users" href="/roles/freelancer">
+    Understand the Freelancer, Client, and Admin roles and what each can do.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Integrate directly with the Skillhouse REST API to build on top of the platform.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## How Skillhouse works
 
-Everything you need to create world-class documentation.
+<Steps>
+  <Step title="Create an account">
+    Sign up with your email or Google account. Choose your role — **Freelancer** or **Client** — and complete your profile.
+  </Step>
+  <Step title="Post or find work">
+    Clients post jobs with budgets and required skills. Freelancers browse the job board and submit proposals.
+  </Step>
+  <Step title="Form a contract">
+    When a client selects a freelancer, a contract is created. The client pays upfront — funds are held securely in escrow.
+  </Step>
+  <Step title="Deliver and get paid">
+    The freelancer completes the work. The client reviews and approves the release. The admin confirms, and funds are transferred to the freelancer's wallet.
+  </Step>
+</Steps>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Key features
 
-## Need inspiration?
+<CardGroup cols={2}>
+  <Card title="Escrow Payments" icon="shield-check" href="/features/payments-and-escrow">
+    Stripe-powered escrow holds funds safely until work is approved. Supports refunds and admin-controlled releases.
+  </Card>
+  <Card title="Real-time Chat" icon="message" href="/features/chat">
+    Clients and freelancers communicate directly via Socket.io-powered chat with image and video sharing.
+  </Card>
+  <Card title="Contract Lifecycle" icon="file-contract" href="/features/contracts">
+    Track every contract from creation through completion, cancellation, or dispute resolution.
+  </Card>
+  <Card title="Admin Dashboard" icon="chart-bar" href="/roles/admin">
+    Full visibility into platform revenue, escrow balances, user activity, and contract status.
+  </Card>
+</CardGroup>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+  Skillhouse is live at [skillhouse-sable.vercel.app](https://skillhouse-sable.vercel.app/). You can explore the platform directly before diving into the documentation.
+</Note>

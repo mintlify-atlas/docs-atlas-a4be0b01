@@ -1,0 +1,402 @@
+---
+title: "Auth endpoints"
+description: "Register accounts, verify OTP, log in with email or Google, refresh tokens, and reset passwords."
+keywords: ["auth", "register", "login", "otp", "password reset", "google oauth", "jwt", "refresh token"]
+---
+
+All auth endpoints are served under the `/api/auth` prefix. None of the endpoints in this group require an existing valid session — they are the entry points for establishing one.
+
+<Note>
+  The `refreshToken` is stored as an `HttpOnly` cookie after a successful login. The `accessToken` returned in the JSON body should be stored in memory (not `localStorage`) and passed as a `Bearer` token on subsequent requests.
+</Note>
+
+---
+
+## POST /api/auth/register
+
+Begin the registration flow. Sends a one-time password to the provided email address. The user record is **not** created until OTP verification succeeds.
+
+**Auth required:** No
+
+### Request body
+
+<ParamField body="name" type="string" required>
+  Full display name for the new account.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Email address. Must be unique across all accounts.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Plain-text password. Hashed before storage. Not required when using Google login.
+</ParamField>
+
+<ParamField body="role" type="string" required>
+  Account role. One of `freelancer` or `client`. The `admin` role cannot be self-registered.
+</ParamField>
+
+<ParamField body="mobile" type="string">
+  Optional phone number.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the OTP was sent to the provided email.
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Alex Johnson",
+    "email": "alex@example.com",
+    "password": "securepassword",
+    "role": "freelancer"
+  }'
+```
+
+---
+
+## POST /api/auth/verify-otp
+
+Verify the OTP and create the user account. Call this immediately after `/register`.
+
+**Auth required:** No
+
+### Request body
+
+<ParamField body="email" type="string" required>
+  The email address used during registration.
+</ParamField>
+
+<ParamField body="otp" type="string" required>
+  The six-digit code sent to the email address.
+</ParamField>
+
+<ParamField body="userData" type="object" required>
+  The same registration payload originally submitted to `/register`.
+  <Expandable title="properties">
+    <ParamField body="name" type="string" required>
+      Full name.
+    </ParamField>
+    <ParamField body="email" type="string" required>
+      Email address.
+    </ParamField>
+    <ParamField body="password" type="string" required>
+      Plain-text password.
+    </ParamField>
+    <ParamField body="role" type="string" required>
+      `freelancer` or `client`.
+    </ParamField>
+    <ParamField body="mobile" type="string">
+      Optional phone number.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the account was created successfully.
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alex@example.com",
+    "otp": "482910",
+    "userData": {
+      "name": "Alex Johnson",
+      "email": "alex@example.com",
+      "password": "securepassword",
+      "role": "freelancer"
+    }
+  }'
+```
+
+---
+
+## POST /api/auth/resend-otp
+
+Request a new OTP for the given email address. Use this when the original code expires or is not received.
+
+**Auth required:** No
+
+### Request body
+
+<ParamField body="email" type="string" required>
+  Email address that was used during registration.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that a new OTP was dispatched.
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/resend-otp \
+  -H "Content-Type: application/json" \
+  -d '{"email": "alex@example.com"}'
+```
+
+---
+
+## POST /api/auth/login
+
+Authenticate with email and password. On success, sets an `HttpOnly` `refreshToken` cookie and returns a short-lived `accessToken` in the response body.
+
+**Auth required:** No
+
+### Request body
+
+<ParamField body="email" type="string" required>
+  Registered email address.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Account password.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Human-readable status message.
+</ResponseField>
+
+<ResponseField name="accessToken" type="string">
+  Short-lived JWT. Pass this in the `Authorization: Bearer` header on protected requests.
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  Role of the authenticated user: `freelancer`, `client`, or `admin`.
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the user record.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      Display name.
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      Email address.
+    </ResponseField>
+    <ResponseField name="role" type="string">
+      Account role.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `active` or `blocked`.
+    </ResponseField>
+    <ResponseField name="profilePic" type="string">
+      URL of the profile picture, or an empty string if not set.
+    </ResponseField>
+    <ResponseField name="isGoogleAuth" type="boolean">
+      Whether the account was created via Google OAuth.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Warning>
+  Blocked accounts receive a `403` error and cannot log in until an admin unblocks them.
+</Warning>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{
+    "email": "alex@example.com",
+    "password": "securepassword"
+  }'
+```
+
+---
+
+## POST /api/auth/logout
+
+Clear the `refreshToken` cookie, ending the session.
+
+**Auth required:** No (cookie is cleared regardless)
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation of successful logout.
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/logout \
+  -b cookies.txt \
+  -c cookies.txt
+```
+
+---
+
+## POST /api/auth/refresh-token
+
+Issue a new `accessToken` using the `refreshToken` cookie. Call this when the current access token expires (after 2 hours).
+
+**Auth required:** No (uses the `refreshToken` cookie)
+
+### Request
+
+No request body. The server reads the `refreshToken` from the `HttpOnly` cookie automatically.
+
+### Response
+
+<ResponseField name="accessToken" type="string">
+  A new short-lived JWT access token.
+</ResponseField>
+
+<Note>
+  The browser must include credentials (cookies) for this request. In `fetch`, set `credentials: "include"`. In `axios`, set `withCredentials: true`.
+</Note>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/refresh-token \
+  -b cookies.txt
+```
+
+---
+
+## POST /api/auth/google-login
+
+Authenticate or register using a Google OAuth ID token. If the email is not yet registered, a new account is created automatically.
+
+**Auth required:** No
+
+### Request body
+
+<ParamField body="token" type="string" required>
+  Google OAuth ID token obtained from the Google Sign-In SDK.
+</ParamField>
+
+<ParamField body="role" type="string" required>
+  Role to assign if a new account is being created. One of `freelancer` or `client`. Ignored for returning users.
+</ParamField>
+
+### Response
+
+Same shape as [POST /api/auth/login](#post-apiauthlogin): `message`, `accessToken`, `role`, and `user`. The `refreshToken` cookie is also set.
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/google-login \
+  -H "Content-Type: application/json" \
+  -c cookies.txt \
+  -d '{
+    "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6...",
+    "role": "client"
+  }'
+```
+
+---
+
+## POST /api/auth/forgot-password
+
+Send a password-reset link to the registered email address. The link contains a short-lived signed token.
+
+**Auth required:** No
+
+### Request body
+
+<ParamField body="email" type="string" required>
+  Email address associated with the account.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the reset email was dispatched.
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{"email": "alex@example.com"}'
+```
+
+---
+
+## POST /api/auth/update-new-password
+
+Complete the forgot-password flow by submitting the reset token and a new password. The token is extracted from the link sent by `/forgot-password`.
+
+**Auth required:** No
+
+### Request body
+
+<ParamField body="token" type="string" required>
+  The signed reset token from the password-reset email link.
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The new plain-text password to set.
+</ParamField>
+
+<ParamField body="confirmPassword" type="string" required>
+  Must match `newPassword`. The server validates equality before updating.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the password was updated.
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/update-new-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "newPassword": "newSecurePassword",
+    "confirmPassword": "newSecurePassword"
+  }'
+```
+
+---
+
+## POST /api/auth/reset-password
+
+Change the password for a logged-in user who knows their current password. Use this for in-app password changes, not forgotten passwords.
+
+**Auth required:** No (validated by supplying the correct `currentPassword`)
+
+### Request body
+
+<ParamField body="email" type="string" required>
+  Email address of the account.
+</ParamField>
+
+<ParamField body="currentPassword" type="string" required>
+  The user's existing password. Must match the stored hash.
+</ParamField>
+
+<ParamField body="newPassword" type="string" required>
+  The replacement password.
+</ParamField>
+
+<ParamField body="confirmPassword" type="string" required>
+  Must match `newPassword`.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the password was changed.
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alex@example.com",
+    "currentPassword": "oldPassword",
+    "newPassword": "newSecurePassword",
+    "confirmPassword": "newSecurePassword"
+  }'
+```

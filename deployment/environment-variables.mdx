@@ -1,0 +1,83 @@
+---
+title: 'Environment variables'
+description: 'Required configuration for running the Skillhouse Backend and Frontend.'
+keywords: ['environment variables', 'configuration', 'env', 'secrets', 'deployment']
+---
+
+Skillhouse uses environment variables to configure external services, secrets, and runtime settings. Neither the Backend nor the Frontend include a committed `.env` file — you must create one for each before running the application.
+
+<Warning>
+  Never commit `.env` files to source control. Both `Backend/.env` and `Frontend/.env` are listed in their respective `.gitignore` files.
+</Warning>
+
+## Backend
+
+Create a `.env` file in the `Backend/` directory. The server validates all required variables at startup and will throw an error if any are missing.
+
+| Variable | Description | Required |
+|---|---|---|
+| `PORT` | Port the Express server listens on. Defaults to `3000` if not set. | Required |
+| `MONGODB_URL` | MongoDB connection string (e.g. `mongodb://localhost:27017/skillhouse`). | Required |
+| `JWT_SECRET` | Secret used to sign JWT access tokens. Use a long, random string. | Required |
+| `REFRESH_SECRET` | Secret used to sign JWT refresh tokens. Must be different from `JWT_SECRET`. | Required |
+| `CLIENT_URL` | Frontend origin allowed by CORS (e.g. `http://localhost:5173`). | Required |
+| `STRIPE_SECRET_KEY` | Stripe secret API key for creating payment intents and managing escrow. | Required |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret for verifying incoming Stripe webhook events. | Required |
+| `REDIS_URL` | Redis connection URL (e.g. `redis://localhost:6379`). If omitted, the app connects to `127.0.0.1:6379` by default. | Optional |
+| `CLOUDINARY_CLOUD_NAME` | Your Cloudinary cloud name, used for uploading profile images and chat media. | Required |
+| `CLOUDINARY_API_KEY` | Cloudinary API key. | Required |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret. | Required |
+| `EMAIL_USER` | Email address used by Nodemailer to send OTP and verification emails. | Required |
+| `EMAIL_PASS` | Password or app-specific password for the `EMAIL_USER` account. | Required |
+
+<Note>
+  `REDIS_URL` is optional when running Redis locally on the default port. For remote Redis instances (e.g. Redis Cloud, Upstash), set this variable explicitly.
+</Note>
+
+### Example Backend `.env`
+
+```bash
+PORT=3000
+MONGODB_URL=mongodb://localhost:27017/skillhouse
+JWT_SECRET=your-jwt-secret-here
+REFRESH_SECRET=your-refresh-secret-here
+CLIENT_URL=http://localhost:5173
+
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+REDIS_URL=redis://localhost:6379
+
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+```
+
+<Warning>
+  `JWT_SECRET`, `REFRESH_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `CLOUDINARY_API_SECRET`, and `EMAIL_PASS` are sensitive credentials. Rotate them immediately if they are ever exposed.
+</Warning>
+
+## Frontend
+
+Create a `.env` file in the `Frontend/` directory. Vite only exposes variables prefixed with `VITE_` to the browser bundle.
+
+| Variable | Description | Required |
+|---|---|---|
+| `VITE_API_URL` | Base URL of the Backend API and Socket.io server (e.g. `http://localhost:3000`). Used by Axios and the Socket.io client. | Required |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key, used to initialise Stripe.js on the client. | Required |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth 2.0 client ID for the Google sign-in button. | Required |
+
+### Example Frontend `.env`
+
+```bash
+VITE_API_URL=http://localhost:3000
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+```
+
+<Info>
+  When deploying to Vercel, add these variables through the Vercel project settings under **Settings → Environment Variables** rather than committing a `.env` file.
+</Info>

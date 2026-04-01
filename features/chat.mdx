@@ -1,0 +1,119 @@
+---
+title: 'Chat'
+description: 'Real-time messaging between clients and freelancers, including media sharing and message history.'
+keywords: ['chat', 'messaging', 'real-time', 'Socket.io', 'media', 'images', 'video', 'Cloudinary']
+---
+
+Skillhouse includes a real-time messaging system that allows clients and freelancers to communicate directly while working together on a contract. Conversations are tied to active contracts — you can only message someone you have a current contract with.
+
+---
+
+## Accessing the chat
+
+You can open a conversation in two ways:
+
+- From the **contract detail page**: click the **Message** button to open the chat with the other party.
+- From the **Messages** section in your dashboard: view all your active conversations and open any of them.
+
+<Info>
+  Chat is only available between a client and a freelancer who share an active, non-deleted contract. Attempting to open a chat without a valid contract will display an error.
+</Info>
+
+---
+
+## Sending messages
+
+Once a conversation is open:
+
+1. Type your message in the input field at the bottom of the screen.
+2. Press **Enter** or click **Send**.
+
+Messages are delivered in real time using Socket.io. If the other person is currently online, they receive the message instantly. If they are offline, it is waiting for them when they next open the conversation.
+
+---
+
+## Emoji support
+
+You can include emoji characters directly in your message text. Use your device's built-in emoji keyboard or paste emoji from any source — they are stored and displayed as part of the message.
+
+---
+
+## Sharing media
+
+You can send images and videos within a conversation.
+
+<Steps>
+  <Step title="Click the media attachment button">
+    In the message input area, click the attachment icon.
+  </Step>
+  <Step title="Select a file from your device">
+    Choose an image or video file to upload.
+  </Step>
+  <Step title="File is uploaded to Cloudinary">
+    The file is uploaded to Skillhouse's media storage (Cloudinary). A URL is returned and associated with the message.
+  </Step>
+  <Step title="Media appears in the conversation">
+    The image or video is displayed inline in the chat thread for both parties.
+  </Step>
+</Steps>
+
+<Note>
+  **Supported media types:**
+  - Images: common formats such as JPEG, PNG, GIF, and WebP
+  - Videos: common formats such as MP4 and MOV
+
+  File type is determined automatically based on the uploaded file's MIME type. The message will display either an image preview or a video player accordingly.
+</Note>
+
+---
+
+## Message history
+
+All messages are persisted to the database. When you open a conversation, the last 50 messages are loaded automatically, ordered from oldest to newest. Scroll up to see earlier messages.
+
+Message history is maintained for the lifetime of the conversation and is accessible to both the client and freelancer at any time while the contract exists.
+
+---
+
+## Read receipts
+
+Messages include a read status:
+
+- A message is marked as **read** when the recipient opens the conversation and views it.
+- The sender can see when their message has been read, along with the time it was read.
+
+---
+
+## Deleting a message
+
+You can delete a message you sent:
+
+1. Hover over the message in the conversation.
+2. Click the **Delete** option.
+
+The message content and any attached media are removed. The message is replaced with the text "This message was deleted" and is visible to both parties. Deletion cannot be undone.
+
+---
+
+## Unread message count
+
+The **Messages** section of your dashboard shows an unread count badge for each conversation with messages you have not yet read. The badge clears automatically once you open the conversation.
+
+---
+
+## Online status
+
+When another user is actively connected to Skillhouse, their status is shown as **online** in the conversation. When they disconnect, the status changes to **offline**.
+
+---
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Contracts" icon="file-signature" href="/features/contracts">
+    Chat is linked to contracts — learn how contracts are created and managed.
+  </Card>
+  <Card title="Reviews" icon="star" href="/features/reviews">
+    After a contract completes, clients can leave a review for the freelancer.
+  </Card>
+</CardGroup>

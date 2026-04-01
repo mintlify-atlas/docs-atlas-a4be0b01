@@ -1,0 +1,136 @@
+---
+title: "API overview"
+description: "Base URLs, route groups, request format, and response conventions for the Skillhouse REST API."
+keywords: ["api", "rest", "overview", "base url", "routes", "authentication", "cors"]
+---
+
+The Skillhouse API is a REST API that serves the web client and any third-party integrations you build on top of the platform. All requests and responses use JSON.
+
+<Note>
+  Skillhouse is self-hosted. Replace `https://your-backend-domain.com` with the URL of your running backend instance. If you are running locally, this is typically `http://localhost:3000`.
+</Note>
+
+## Base URL
+
+```
+https://your-backend-domain.com/api
+```
+
+## Route groups
+
+The API is organized into five route groups based on the actor or resource being accessed.
+
+| Prefix | Purpose |
+|---|---|
+| `/api/auth/*` | Registration, login, OTP verification, and password reset |
+| `/api/client/*` | Job postings, contracts, payments, and reviews for clients |
+| `/api/freelancer/*` | Applications, active contracts, and wallet for freelancers |
+| `/api/admin/*` | User management, categories, escrow releases, and revenue |
+| `/api/media/*` | File uploads (images, videos) |
+
+<CardGroup cols={2}>
+  <Card title="Auth endpoints" icon="lock" href="/api/endpoints/auth">
+    Register, log in, verify OTP, refresh tokens, and reset passwords.
+  </Card>
+  <Card title="Jobs endpoints" icon="briefcase" href="/api/endpoints/jobs">
+    Post jobs, browse listings, and manage proposals.
+  </Card>
+  <Card title="Contracts endpoints" icon="file-contract" href="/api/endpoints/contracts">
+    Create and manage contracts through their full lifecycle.
+  </Card>
+  <Card title="Payments endpoints" icon="credit-card" href="/api/endpoints/payments">
+    Handle escrow deposits, releases, and refunds via Stripe.
+  </Card>
+  <Card title="Freelancer endpoints" icon="user" href="/api/endpoints/freelancer">
+    Manage freelancer profiles, applications, and wallet.
+  </Card>
+  <Card title="Admin endpoints" icon="shield" href="/api/endpoints/admin">
+    Oversee users, categories, escrow, and platform revenue.
+  </Card>
+</CardGroup>
+
+## Authentication
+
+Protected endpoints require a valid JWT access token. You can send the token in one of two ways:
+
+- **Authorization header** — `Authorization: Bearer <accessToken>`
+- **HttpOnly cookie** — the `refreshToken` cookie is set automatically on login and used to issue new access tokens
+
+Most browser-based clients will rely on cookies. API integrations should use the Authorization header. See [Authentication](/api/authentication) for the full flow.
+
+## Request format
+
+Set `Content-Type: application/json` on all requests that include a body.
+
+```bash
+curl -X POST https://your-backend-domain.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "yourpassword"}'
+```
+
+## HTTP methods
+
+The API uses standard HTTP methods:
+
+| Method | Usage |
+|---|---|
+| `GET` | Retrieve a resource or list |
+| `POST` | Create a resource or trigger an action |
+| `PUT` | Replace a resource |
+| `PATCH` | Partially update a resource |
+| `DELETE` | Remove a resource |
+
+## Response format
+
+All responses return JSON. Successful responses include relevant data at the top level:
+
+```json
+{
+  "message": "Login successful",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "role": "client",
+  "user": {
+    "id": "64f1a2b3c4d5e6f7a8b9c0d1",
+    "name": "Alex Johnson",
+    "email": "alex@example.com",
+    "status": "active",
+    "profilePic": ""
+  }
+}
+```
+
+## Error responses
+
+Errors follow a consistent shape across all endpoints:
+
+```json
+{
+  "message": "Invalid credentials",
+  "status": 400
+}
+```
+
+Common HTTP status codes:
+
+| Code | Meaning |
+|---|---|
+| `400` | Bad request — missing or invalid parameters |
+| `401` | Unauthorized — missing, expired, or invalid token |
+| `403` | Forbidden — valid token but insufficient role |
+| `404` | Not found — resource does not exist |
+| `409` | Conflict — resource already exists (e.g., duplicate email) |
+| `500` | Internal server error |
+
+## CORS
+
+The API allows cross-origin requests from the URL configured in the `CLIENT_URL` environment variable on the server. If you are calling the API from a browser on a different origin, ensure the backend `CLIENT_URL` is set to your frontend's domain.
+
+Allowed headers: `Content-Type`, `Authorization`
+
+Allowed methods: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`
+
+Credentials (cookies) are supported — the API sets `credentials: true` in its CORS configuration.
+
+<Tip>
+  See [Environment variables](/deployment/environment-variables) for the full list of variables required to run the backend, including `CLIENT_URL`.
+</Tip>

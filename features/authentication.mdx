@@ -1,0 +1,118 @@
+---
+title: 'Authentication'
+description: 'How to create an account, verify your email, log in, and manage your session on Skillhouse.'
+keywords: ['authentication', 'register', 'login', 'OTP', 'Google OAuth', 'password reset', 'JWT', 'freelancer', 'client']
+---
+
+Skillhouse supports two sign-up methods — email/password and Google OAuth — and two roles: **Freelancer** and **Client**. You select your role during registration, and it determines which parts of the platform you can access.
+
+<Info>
+  Your role is permanent and cannot be changed after registration. Choose carefully between Freelancer and Client when you sign up.
+</Info>
+
+## Roles at a glance
+
+<CardGroup cols={2}>
+  <Card title="Freelancer" icon="briefcase" href="/roles/freelancer">
+    Browse open jobs, submit proposals, manage contracts, receive payments, and build a public profile with reviews.
+  </Card>
+  <Card title="Client" icon="building" href="/roles/client">
+    Post jobs, review applicants, create contracts, fund escrow via Stripe, release payments, and leave reviews.
+  </Card>
+</CardGroup>
+
+---
+
+## Register with email and password
+
+<Steps>
+  <Step title="Go to the registration page">
+    Open the Skillhouse app and click **Sign up**. You will be presented with a registration form.
+  </Step>
+  <Step title="Fill in your details">
+    Enter your full name, email address, and a password. Then select your role: **Freelancer** or **Client**.
+  </Step>
+  <Step title="Submit the form">
+    Click **Create account**. Skillhouse will send a one-time password (OTP) to the email address you provided.
+  </Step>
+  <Step title="Verify your email">
+    Open the email from Skillhouse and copy the OTP code. Enter it on the verification screen and click **Verify**. Your account is now active.
+  </Step>
+  <Step title="Log in">
+    You are redirected to the login page. Enter your email and password to access your dashboard.
+  </Step>
+</Steps>
+
+<Tip>
+  If you did not receive the OTP email, check your spam folder. You can also request a new code using the **Resend OTP** link on the verification screen.
+</Tip>
+
+---
+
+## Register with Google
+
+<Steps>
+  <Step title="Click 'Continue with Google'">
+    On the sign-up or login page, select the Google sign-in option.
+  </Step>
+  <Step title="Authorise Skillhouse">
+    A Google OAuth consent screen will appear. Select your Google account and grant the requested permissions.
+  </Step>
+  <Step title="Select your role">
+    On your first Google sign-in, Skillhouse will ask you to choose a role — **Freelancer** or **Client**. This step only appears once.
+  </Step>
+  <Step title="Access your dashboard">
+    Your account is created and you are logged in immediately. No email verification step is required for Google accounts.
+  </Step>
+</Steps>
+
+---
+
+## Email OTP verification
+
+When you register with email and password, Skillhouse sends a numeric OTP to verify that you own the email address. The code is single-use and expires after a short window.
+
+- Enter the code on the verification screen within the time limit.
+- If the code expires, use **Resend OTP** to receive a fresh one.
+- You cannot log in until your email is verified.
+
+---
+
+## Session management
+
+Skillhouse uses a dual-token system:
+
+| Token | Lifetime | Purpose |
+|---|---|---|
+| Access token | 2 hours | Authenticates API requests |
+| Refresh token | 7 days | Issues new access tokens silently |
+
+Both tokens are stored as HTTP-only cookies, so they are not accessible to JavaScript running on the page. When your access token expires, the client automatically requests a new one using the refresh token — you stay logged in without re-entering your credentials.
+
+To end your session manually, click **Log out** in the navigation menu. Both cookies are cleared immediately.
+
+---
+
+## Reset a forgotten password
+
+<Steps>
+  <Step title="Go to the login page and click 'Forgot password'">
+    You will be taken to the password reset request screen.
+  </Step>
+  <Step title="Enter your registered email address">
+    Skillhouse sends a password reset link to that address.
+  </Step>
+  <Step title="Open the email and click the reset link">
+    The link takes you to a page where you can set a new password.
+  </Step>
+  <Step title="Enter and confirm your new password">
+    Submit the form. Your password is updated and the reset link is invalidated.
+  </Step>
+  <Step title="Log in with your new password">
+    Return to the login page and sign in normally.
+  </Step>
+</Steps>
+
+<Warning>
+  Password reset is only available for email/password accounts. If you signed up with Google, your credentials are managed by Google and cannot be changed through Skillhouse.
+</Warning>

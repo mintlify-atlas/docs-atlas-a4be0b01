@@ -1,0 +1,199 @@
+---
+title: 'Client'
+description: 'How to post jobs, hire freelancers, manage contracts, and release payments on Skillhouse as a client.'
+keywords: ['client', 'post job', 'hire freelancer', 'contract', 'escrow', 'payment', 'stripe', 'reviews']
+---
+
+As a client on Skillhouse, you can post jobs, review proposals from freelancers, create contracts, pay securely through escrow, and leave reviews — all from a single dashboard.
+
+<CardGroup cols={2}>
+  <Card title="Profile" icon="building" href="/roles/client#setting-up-your-profile">
+    Add your company name and a profile picture so freelancers know who they are working with.
+  </Card>
+  <Card title="Post a job" icon="plus" href="/roles/client#posting-a-job">
+    Describe what you need, set a budget, and choose the skills and category that match your project.
+  </Card>
+  <Card title="Review applicants" icon="users" href="/roles/client#reviewing-applicants">
+    See every freelancer who applied and visit their profile before making a decision.
+  </Card>
+  <Card title="Contracts" icon="file-contract" href="/features/contracts">
+    Create a contract with your chosen freelancer and track progress through to completion.
+  </Card>
+  <Card title="Escrow payments" icon="lock" href="/features/payments-and-escrow">
+    Pay via Stripe into escrow. Funds are only released when you approve the work.
+  </Card>
+  <Card title="Reviews" icon="star" href="/features/reviews">
+    Leave a star rating and written feedback for freelancers after a contract completes.
+  </Card>
+</CardGroup>
+
+---
+
+## Setting up your profile
+
+Your profile lets freelancers understand who they are working with before they apply.
+
+<Steps>
+  <Step title="Go to your profile page">
+    After signing in, navigate to **Profile** from the sidebar.
+  </Step>
+  <Step title="Add your company details">
+    Click **Edit Profile** and enter your company or organisation name.
+  </Step>
+  <Step title="Upload a profile picture">
+    Click the avatar area and upload a logo or photo. Accepted formats: PNG, JPEG, JPG, WebP.
+  </Step>
+  <Step title="Save">
+    Click **Save** to apply your changes.
+  </Step>
+</Steps>
+
+---
+
+## Posting a job
+
+<Steps>
+  <Step title="Navigate to Post Job">
+    From your dashboard or sidebar, click **Post Job**.
+  </Step>
+  <Step title="Fill in the job details">
+    Complete the form with the following fields:
+
+    | Field | Description |
+    |---|---|
+    | **Title** | A short, descriptive name for the role (e.g. "Graphic Designer") |
+    | **Description** | What the project involves and what you expect the freelancer to deliver |
+    | **Budget** | Your fixed price for the project in rupees |
+    | **Experience level** | Beginner, Intermediate, or Expert |
+    | **Location** | Where the work is based, or "Remote" |
+    | **Category** | The job category that best fits your project |
+    | **Skills required** | Select all skills a freelancer must have |
+    | **Start date / End date** | Optional project timeline |
+  </Step>
+  <Step title="Submit the listing">
+    Click **Submit**. Your job is immediately visible on the public job board and freelancers can begin applying.
+  </Step>
+</Steps>
+
+<Tip>
+  Write a clear description and set a realistic budget. Listings with specific requirements attract more qualified applicants.
+</Tip>
+
+You can edit a posted job at any time from **My Jobs** before a contract is created.
+
+---
+
+## Reviewing applicants
+
+Once freelancers start applying, you can view all applicants for each of your jobs.
+
+- Navigate to **My Jobs** and open the listing you want to review
+- Click **View Applicants** to see everyone who has applied
+- Click any applicant's name to visit their full profile, including their skills, bio, completed works, and client reviews
+
+<Info>
+  Applicant profiles show star ratings from previous contracts, so you can evaluate a freelancer's track record before selecting them.
+</Info>
+
+---
+
+## Selecting a freelancer and creating a contract
+
+After reviewing applicants, select the freelancer you want to hire.
+
+<Steps>
+  <Step title="Choose a freelancer">
+    From the applicants list, identify the freelancer you want to work with.
+  </Step>
+  <Step title="Create a contract">
+    Click **Create Contract** on their application. This generates a contract linking your job, your account, and the freelancer's account.
+  </Step>
+  <Step title="Proceed to payment">
+    After creating the contract, you are prompted to make the escrow payment. The contract is not active until payment is confirmed.
+  </Step>
+</Steps>
+
+<Note>
+  Only one contract can be created per job. If you need to cancel before work begins, you can do so from the contract details page.
+</Note>
+
+---
+
+## Making the escrow payment via Stripe
+
+Skillhouse holds your payment in escrow until you approve the completed work. This protects both you and the freelancer.
+
+<Steps>
+  <Step title="Initiate payment">
+    From the contract or job details page, click **Make Payment**. You are redirected to a Stripe-hosted checkout page.
+  </Step>
+  <Step title="Complete checkout">
+    Enter your card details on the Stripe checkout page and confirm the payment. The amount is drawn from your card and held in escrow.
+  </Step>
+  <Step title="Confirmation">
+    After a successful payment, you are redirected back to Skillhouse and the contract status updates to reflect the active engagement.
+  </Step>
+</Steps>
+
+<Warning>
+  Do not close the browser during the Stripe checkout. If payment fails or is interrupted, no funds are taken and you can retry from the contract page.
+</Warning>
+
+See [Payments and escrow](/features/payments-and-escrow) for a full explanation of how escrow works.
+
+---
+
+## Communicating with the freelancer
+
+Use the built-in real-time chat to stay in contact with your freelancer throughout the project.
+
+- Chat is accessible from the contract details page
+- Messages are delivered instantly without leaving the platform
+
+See [Chat](/features/chat) for more information.
+
+---
+
+## Approving work and requesting fund release
+
+When the freelancer marks the contract as complete, you can review the deliverables and release payment.
+
+<Steps>
+  <Step title="Review the work">
+    Check the deliverables against what was agreed in the job description.
+  </Step>
+  <Step title="Request fund release">
+    From the contract details page, click **Release Funds**. This signals to the platform admin that you have approved the work.
+  </Step>
+  <Step title="Admin releases payment">
+    The admin processes the fund release and the freelancer receives the payment in their wallet.
+  </Step>
+</Steps>
+
+<Info>
+  If you are not satisfied with the work, contact the freelancer via chat to resolve the issue before requesting fund release. You can also cancel the contract — in which case the admin can process a refund to your account.
+</Info>
+
+---
+
+## Leaving a review
+
+After a contract completes, you can leave a star rating and written feedback for the freelancer.
+
+- Navigate to the completed contract and click **Leave a Review**
+- Select a rating from 1 to 5 stars and add a written description of your experience
+- Reviews appear publicly on the freelancer's profile
+
+<Note>
+  You can only leave one review per contract. Take a moment to write specific feedback — it helps the freelancer improve and helps other clients make better hiring decisions.
+</Note>
+
+See [Reviews](/features/reviews) for more details.
+
+---
+
+## Viewing all contracts
+
+Navigate to **Contracts** in the sidebar to see every contract you have created, along with their current status (active, completed, or cancelled).
+
+Click any contract to open the full details, including the job description, freelancer profile, payment status, and contract timeline.

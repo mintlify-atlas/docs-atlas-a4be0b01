@@ -1,0 +1,450 @@
+---
+title: "Freelancer endpoints"
+description: "Apply for jobs, manage applications, view and update freelancer profiles, track wallet earnings, and access transaction history."
+keywords: ["freelancer", "apply job", "cancel application", "applied jobs", "freelancer profile", "wallet", "earnings", "transactions", "sales report"]
+---
+
+Freelancer endpoints are organized under the `/api/freelancer` prefix, with sub-routes for job applications (`/jobs`), contracts (`/contract`), profile (`/profile`), and wallet (`/wallet`).
+
+<Info>
+  Freelancer contract endpoints are documented on the [Contracts endpoints](/api/endpoints/contracts) page. This page covers applications, profile management, and wallet operations.
+</Info>
+
+---
+
+## POST /api/freelancer/jobs/apply-job/:jobId
+
+Submit a job application. Creates an `Application` record linking the freelancer to the job.
+
+**Auth required:** Yes — `freelancer` role
+
+### Path parameters
+
+<ParamField path="jobId" type="string" required>
+  MongoDB ObjectId of the job to apply for.
+</ParamField>
+
+### Request body
+
+No request body is required. The freelancer's ID is read from the authenticated JWT.
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the application was submitted.
+</ResponseField>
+
+<ResponseField name="application" type="object">
+  The created application document.
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the application.
+    </ResponseField>
+    <ResponseField name="jobId" type="string">
+      ObjectId of the job applied for.
+    </ResponseField>
+    <ResponseField name="freelancerId" type="string">
+      ObjectId of the applicant.
+    </ResponseField>
+    <ResponseField name="isApplied" type="boolean">
+      `true` once the application is saved.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      Initial status: `Pending`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/freelancer/jobs/apply-job/64f1a2b3c4d5e6f7a8b9c0d4 \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## DELETE /api/freelancer/jobs/cancel-application/:applicationId
+
+Withdraw a pending job application.
+
+**Auth required:** Yes — `freelancer` role
+
+### Path parameters
+
+<ParamField path="applicationId" type="string" required>
+  MongoDB ObjectId of the application to cancel.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the application was withdrawn.
+</ResponseField>
+
+```bash cURL
+curl -X DELETE https://your-backend-domain.com/api/freelancer/jobs/cancel-application/64f1a2b3c4d5e6f7a8b9c0aa \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## GET /api/freelancer/jobs/applied-jobs
+
+List all jobs the authenticated freelancer has applied for.
+
+**Auth required:** Yes — `freelancer` role
+
+### Response
+
+Array of application documents, each populated with the associated `jobId` details.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/freelancer/jobs/applied-jobs" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## GET /api/freelancer/jobs/applied-status/:jobId/:freelancerId
+
+Check the application status for a specific freelancer on a specific job.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="jobId" type="string" required>
+  MongoDB ObjectId of the job.
+</ParamField>
+
+<ParamField path="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer.
+</ParamField>
+
+### Response
+
+<ResponseField name="application" type="object">
+  The matching application document, or `null` if no application exists.
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string">
+      Application ID.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `Pending`, `Accepted`, or `Rejected`.
+    </ResponseField>
+    <ResponseField name="isApplied" type="boolean">
+      Whether an application exists.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/freelancer/jobs/applied-status/64f1a2b3c4d5e6f7a8b9c0d4/64f1a2b3c4d5e6f7a8b9c0d6"
+```
+
+---
+
+## GET /api/freelancer/profile/get-profile/:id
+
+Retrieve the public freelancer profile for a given user ID.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the freelancer user.
+</ParamField>
+
+### Response
+
+<ResponseField name="profile" type="object">
+  The freelancer profile document.
+  <Expandable title="properties">
+    <ResponseField name="userId" type="string">
+      Reference to the user record.
+    </ResponseField>
+    <ResponseField name="firstName" type="string">
+      First name.
+    </ResponseField>
+    <ResponseField name="title" type="string">
+      Professional headline (e.g., "Full Stack Developer").
+    </ResponseField>
+    <ResponseField name="bio" type="string">
+      Short biography.
+    </ResponseField>
+    <ResponseField name="profilePic" type="string">
+      Profile picture URL.
+    </ResponseField>
+    <ResponseField name="skills" type="object[]">
+      Array of populated skill objects.
+    </ResponseField>
+    <ResponseField name="jobCategory" type="object">
+      Populated job category object.
+    </ResponseField>
+    <ResponseField name="city" type="string">
+      City.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      State.
+    </ResponseField>
+    <ResponseField name="country" type="string">
+      Country.
+    </ResponseField>
+    <ResponseField name="zip" type="string">
+      Postal code.
+    </ResponseField>
+    <ResponseField name="language" type="string[]">
+      Languages spoken.
+    </ResponseField>
+    <ResponseField name="profileCompleted" type="boolean">
+      Whether the profile setup wizard has been completed.
+    </ResponseField>
+    <ResponseField name="experienceLevel" type="string">
+      `Beginner`, `Intermediate`, or `Expert`.
+    </ResponseField>
+    <ResponseField name="portfolio" type="object[]">
+      Array of portfolio items with `name` and `imageUrl`.
+    </ResponseField>
+    <ResponseField name="education" type="object">
+      Education details with `college` and `course`.
+    </ResponseField>
+    <ResponseField name="linkedAccounts" type="object">
+      Social/professional links with `github`, `linkedIn`, and `website`.
+    </ResponseField>
+    <ResponseField name="employmentHistory" type="object[]">
+      Previous employment with `company`, `position`, and `duration`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/freelancer/profile/get-profile/64f1a2b3c4d5e6f7a8b9c0d6"
+```
+
+---
+
+## PUT /api/freelancer/profile/update-profile/:id
+
+Update the freelancer's profile information.
+
+**Auth required:** Yes — `freelancer` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the freelancer user.
+</ParamField>
+
+### Request body
+
+Provide any combination of updatable profile fields:
+
+<ParamField body="firstName" type="string">
+  First name.
+</ParamField>
+
+<ParamField body="title" type="string">
+  Professional headline.
+</ParamField>
+
+<ParamField body="bio" type="string">
+  Short biography.
+</ParamField>
+
+<ParamField body="skills" type="string[]">
+  Array of skill ObjectIds.
+</ParamField>
+
+<ParamField body="jobCategory" type="string">
+  Category ObjectId.
+</ParamField>
+
+<ParamField body="city" type="string">
+  City.
+</ParamField>
+
+<ParamField body="state" type="string">
+  State.
+</ParamField>
+
+<ParamField body="country" type="string">
+  Country.
+</ParamField>
+
+<ParamField body="zip" type="string">
+  Postal code.
+</ParamField>
+
+<ParamField body="language" type="string[]">
+  Languages spoken.
+</ParamField>
+
+<ParamField body="experienceLevel" type="string">
+  `Beginner`, `Intermediate`, or `Expert`.
+</ParamField>
+
+<ParamField body="portfolio" type="object[]">
+  Array of `{ name, imageUrl }` portfolio objects.
+</ParamField>
+
+<ParamField body="education" type="object">
+  `{ college, course }` education object.
+</ParamField>
+
+<ParamField body="linkedAccounts" type="object">
+  `{ github, linkedIn, website }` link object.
+</ParamField>
+
+<ParamField body="employmentHistory" type="object[]">
+  Array of `{ company, position, duration }` employment records.
+</ParamField>
+
+### Response
+
+The updated freelancer profile document.
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/freelancer/profile/update-profile/64f1a2b3c4d5e6f7a8b9c0d6 \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Senior React Developer",
+    "bio": "5 years of experience building scalable web applications.",
+    "experienceLevel": "Expert",
+    "skills": ["64f1a2b3c4d5e6f7a8b9c0d2"],
+    "language": ["English", "Hindi"]
+  }'
+```
+
+---
+
+## POST /api/freelancer/profile/upload-image/:id
+
+Upload a profile picture for the freelancer. Accepts `multipart/form-data`.
+
+**Auth required:** Yes — `freelancer` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the freelancer user.
+</ParamField>
+
+### Request body
+
+<ParamField body="profilePic" type="file" required>
+  Image file to upload. Stored via Cloudinary and the resulting URL is saved to the profile.
+</ParamField>
+
+### Response
+
+The updated freelancer profile document including the new `profilePic` URL.
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/freelancer/profile/upload-image/64f1a2b3c4d5e6f7a8b9c0d6 \
+  -H "Authorization: Bearer <accessToken>" \
+  -F "profilePic=@/path/to/photo.jpg"
+```
+
+---
+
+## GET /api/freelancer/wallet/earnings/:userId
+
+Retrieve the wallet record for a user, including current balance.
+
+**Auth required:** Yes — `freelancer` or `client` role
+
+### Path parameters
+
+<ParamField path="userId" type="string" required>
+  MongoDB ObjectId of the user whose wallet to retrieve.
+</ParamField>
+
+### Response
+
+<ResponseField name="wallet" type="object">
+  The wallet document.
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the wallet.
+    </ResponseField>
+    <ResponseField name="userId" type="string">
+      Reference to the user record.
+    </ResponseField>
+    <ResponseField name="balance" type="number">
+      Current wallet balance in INR.
+    </ResponseField>
+    <ResponseField name="isDeleted" type="boolean">
+      Whether the wallet has been soft-deleted.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/freelancer/wallet/earnings/64f1a2b3c4d5e6f7a8b9c0d6" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## GET /api/freelancer/wallet/transactions/:walletId
+
+Retrieve the full transaction history for a wallet.
+
+**Auth required:** Yes — `freelancer` or `client` role
+
+### Path parameters
+
+<ParamField path="walletId" type="string" required>
+  MongoDB ObjectId of the wallet (from the `_id` returned by the earnings endpoint).
+</ParamField>
+
+### Response
+
+<ResponseField name="transactions" type="object[]">
+  Array of transaction records ordered by date.
+  <Expandable title="transaction properties">
+    <ResponseField name="amount" type="number">
+      Transaction amount in INR.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Human-readable description of the transaction.
+    </ResponseField>
+    <ResponseField name="type" type="string">
+      `credit` or `debit`.
+    </ResponseField>
+    <ResponseField name="date" type="string">
+      ISO 8601 timestamp of the transaction.
+    </ResponseField>
+    <ResponseField name="contractId" type="string">
+      ObjectId of the associated contract, if applicable.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/freelancer/wallet/transactions/64f1a2b3c4d5e6f7a8b9c0bb" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## GET /api/freelancer/wallet/user-sales-report/:userId
+
+Retrieve aggregated earnings data for a user, suitable for generating charts or sales reports.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="userId" type="string" required>
+  MongoDB ObjectId of the user.
+</ParamField>
+
+### Response
+
+Aggregated sales data. The exact shape is determined by the wallet service implementation and typically includes monthly totals.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/freelancer/wallet/user-sales-report/64f1a2b3c4d5e6f7a8b9c0d6"
+```

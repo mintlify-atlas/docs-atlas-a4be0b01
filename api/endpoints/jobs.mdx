@@ -1,0 +1,447 @@
+---
+title: "Jobs endpoints"
+description: "Browse the public job board, post new jobs as a client, view job details, manage your listings, and view applicants."
+keywords: ["jobs", "job listing", "create job", "update job", "applicants", "client profile", "stripe payment"]
+---
+
+Job-related endpoints live under the `/api/client/job` prefix. Browsing the public job board requires no authentication. Creating, updating, and viewing job details requires a valid JWT.
+
+<Info>
+  The [Stripe payment endpoint](#post-apiclientjobpaymentjobid) that initiates escrow funding is also mounted under this prefix. See [Payments endpoints](/api/endpoints/payments) for the full payment flow context.
+</Info>
+
+---
+
+## GET /api/client/job/get-jobs
+
+Return a paginated, searchable, filterable list of all published jobs.
+
+**Auth required:** No
+
+### Query parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number to retrieve.
+</ParamField>
+
+<ParamField query="limit" type="number" default="4">
+  Number of results per page.
+</ParamField>
+
+<ParamField query="search" type="string">
+  Full-text search term matched against job titles and descriptions.
+</ParamField>
+
+<ParamField query="filter" type="string">
+  Filter by job status or category. The accepted values correspond to the job `status` field (`Open`, `Ongoing`, `Closed`) or a category ObjectId.
+</ParamField>
+
+<ParamField query="sort" type="string">
+  Sort order for results. Accepted values depend on the service implementation (e.g., `newest`, `rate`).
+</ParamField>
+
+### Response
+
+<ResponseField name="jobs" type="object[]">
+  Array of job objects for the current page.
+  <Expandable title="job properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the job.
+    </ResponseField>
+    <ResponseField name="title" type="string">
+      Job title.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Full job description.
+    </ResponseField>
+    <ResponseField name="rate" type="number">
+      Total budget for the job in INR.
+    </ResponseField>
+    <ResponseField name="experienceLevel" type="string">
+      `Beginner`, `Intermediate`, or `Expert`.
+    </ResponseField>
+    <ResponseField name="location" type="string">
+      Location requirement.
+    </ResponseField>
+    <ResponseField name="clientId" type="object">
+      Populated client user object.
+    </ResponseField>
+    <ResponseField name="category" type="object">
+      Populated category object.
+    </ResponseField>
+    <ResponseField name="skills" type="object[]">
+      Array of populated skill objects.
+    </ResponseField>
+    <ResponseField name="applicants" type="number">
+      Total number of applications received.
+    </ResponseField>
+    <ResponseField name="status" type="string">
+      `Open`, `Ongoing`, or `Closed`.
+    </ResponseField>
+    <ResponseField name="hiredFreelancer" type="string">
+      ObjectId of the hired freelancer, or `null` if none yet.
+    </ResponseField>
+    <ResponseField name="startDate" type="string">
+      ISO 8601 date, if set.
+    </ResponseField>
+    <ResponseField name="endDate" type="string">
+      ISO 8601 date, if set.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Total number of jobs matching the query (before pagination).
+</ResponseField>
+
+<ResponseField name="currentPage" type="number">
+  The page returned.
+</ResponseField>
+
+<ResponseField name="totalPages" type="number">
+  Total number of pages given the current `limit`.
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/client/job/get-jobs?page=1&limit=4&search=react&filter=Open&sort=newest"
+```
+
+---
+
+## POST /api/client/job/create-job
+
+Post a new job. The authenticated user's ID is used as the `clientId`.
+
+**Auth required:** Yes — `client` role
+
+### Request body
+
+<ParamField body="title" type="string" required>
+  Short, descriptive job title.
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Detailed job description including scope and deliverables.
+</ParamField>
+
+<ParamField body="rate" type="number" required>
+  Total budget for the job in INR.
+</ParamField>
+
+<ParamField body="experienceLevel" type="string" required>
+  Required experience level. One of `Beginner`, `Intermediate`, or `Expert`.
+</ParamField>
+
+<ParamField body="location" type="string" required>
+  Location requirement (e.g., `Remote`, `Mumbai`).
+</ParamField>
+
+<ParamField body="category" type="string" required>
+  ObjectId of the job category. Retrieve valid IDs from `GET /api/admin/categories/get-categories`.
+</ParamField>
+
+<ParamField body="skills" type="string[]" required>
+  Array of skill ObjectIds required for this job.
+</ParamField>
+
+<ParamField body="startDate" type="string">
+  ISO 8601 date string for the expected start date.
+</ParamField>
+
+<ParamField body="endDate" type="string">
+  ISO 8601 date string for the expected end date.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="job" type="object">
+  The newly created job document.
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/client/job/create-job \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "React Frontend Developer",
+    "description": "Build a dashboard using React and Tailwind CSS.",
+    "rate": 50000,
+    "experienceLevel": "Intermediate",
+    "location": "Remote",
+    "category": "64f1a2b3c4d5e6f7a8b9c0d1",
+    "skills": ["64f1a2b3c4d5e6f7a8b9c0d2", "64f1a2b3c4d5e6f7a8b9c0d3"],
+    "startDate": "2026-05-01",
+    "endDate": "2026-07-31"
+  }'
+```
+
+---
+
+## GET /api/client/job/job-details/:id
+
+Retrieve full details for a single job by its ObjectId.
+
+**Auth required:** Yes — `client` or `freelancer` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the job.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  The full job document with populated `clientId`, `category`, and `skills` references.
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/client/job/job-details/64f1a2b3c4d5e6f7a8b9c0d4" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## GET /api/client/job/my-jobs/:id
+
+Return a paginated list of jobs posted by a specific client.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the client user.
+</ParamField>
+
+### Query parameters
+
+<ParamField query="page" type="number" default="1">
+  Page number.
+</ParamField>
+
+<ParamField query="limit" type="number" default="4">
+  Results per page.
+</ParamField>
+
+<ParamField query="search" type="string">
+  Search term.
+</ParamField>
+
+<ParamField query="filter" type="string">
+  Filter by job status.
+</ParamField>
+
+<ParamField query="sort" type="string">
+  Sort order.
+</ParamField>
+
+### Response
+
+<ResponseField name="jobs" type="object[]">
+  Paginated array of the client's job listings.
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Total matching jobs.
+</ResponseField>
+
+<ResponseField name="currentPage" type="number">
+  Current page number.
+</ResponseField>
+
+<ResponseField name="totalPages" type="number">
+  Total pages.
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/client/job/my-jobs/64f1a2b3c4d5e6f7a8b9c0d5?page=1&limit=4"
+```
+
+---
+
+## PUT /api/client/job/update-job/:id
+
+Update an existing job. Only the client who created the job can update it — the server verifies ownership before applying changes.
+
+**Auth required:** Yes — `client` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the job to update.
+</ParamField>
+
+### Request body
+
+Provide only the fields you want to change. All job fields are accepted (see [create-job](#post-apiclientjobcreate-job) for the full field list).
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation message.
+</ResponseField>
+
+<ResponseField name="job" type="object">
+  The updated job document.
+</ResponseField>
+
+<Warning>
+  Returns `403 Forbidden` if the authenticated user's ID does not match the job's `clientId`.
+</Warning>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/client/job/update-job/64f1a2b3c4d5e6f7a8b9c0d4 \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Senior React Frontend Developer",
+    "rate": 65000
+  }'
+```
+
+---
+
+## GET /api/client/job/applicants/:jobId/:clientId
+
+Retrieve all applications submitted for a specific job, scoped to the owning client.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="jobId" type="string" required>
+  MongoDB ObjectId of the job.
+</ParamField>
+
+<ParamField path="clientId" type="string" required>
+  MongoDB ObjectId of the client who owns the job.
+</ParamField>
+
+### Response
+
+An array of application objects, each including the `freelancerId` (populated), `status`, and `isApplied` fields.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/client/job/applicants/64f1a2b3c4d5e6f7a8b9c0d4/64f1a2b3c4d5e6f7a8b9c0d5"
+```
+
+---
+
+## GET /api/client/profile/get-profile/:id
+
+Retrieve the client profile for the given user ID.
+
+**Auth required:** Yes — `client` or `freelancer` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the client user.
+</ParamField>
+
+### Response
+
+<ResponseField name="profile" type="object">
+  The client profile document.
+  <Expandable title="properties">
+    <ResponseField name="userId" type="string">
+      Reference to the user record.
+    </ResponseField>
+    <ResponseField name="firstName" type="string">
+      First name.
+    </ResponseField>
+    <ResponseField name="city" type="string">
+      City.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      State.
+    </ResponseField>
+    <ResponseField name="profilePic" type="string">
+      Profile picture URL.
+    </ResponseField>
+    <ResponseField name="jobsPosted" type="number">
+      Total number of jobs posted by this client.
+    </ResponseField>
+    <ResponseField name="totalSpent" type="number">
+      Total amount spent on contracts in INR.
+    </ResponseField>
+    <ResponseField name="profileCompleted" type="boolean">
+      Whether the profile setup wizard has been completed.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl "https://your-backend-domain.com/api/client/profile/get-profile/64f1a2b3c4d5e6f7a8b9c0d5" \
+  -H "Authorization: Bearer <accessToken>"
+```
+
+---
+
+## PUT /api/client/profile/update-profile/:id
+
+Update the client's profile information.
+
+**Auth required:** Yes — `client` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the client user.
+</ParamField>
+
+### Request body
+
+Provide the fields to update from the client profile schema: `firstName`, `city`, `state`.
+
+### Response
+
+The updated client profile document.
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/client/profile/update-profile/64f1a2b3c4d5e6f7a8b9c0d5 \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "firstName": "Alex",
+    "city": "Mumbai",
+    "state": "Maharashtra"
+  }'
+```
+
+---
+
+## POST /api/client/profile/upload-image/:id
+
+Upload a profile picture for the client. Accepts `multipart/form-data`.
+
+**Auth required:** Yes — `client` role
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  MongoDB ObjectId of the client user.
+</ParamField>
+
+### Request body
+
+Send the file as `multipart/form-data` with the field name `profilePic`.
+
+<ParamField body="profilePic" type="file" required>
+  Image file to upload. Stored and served via Cloudinary.
+</ParamField>
+
+### Response
+
+The updated client profile document including the new `profilePic` URL.
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/client/profile/upload-image/64f1a2b3c4d5e6f7a8b9c0d5 \
+  -H "Authorization: Bearer <accessToken>" \
+  -F "profilePic=@/path/to/photo.jpg"
+```

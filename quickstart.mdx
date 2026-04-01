@@ -1,80 +1,147 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quick start"
+description: "Get up and running with Skillhouse in minutes"
 ---
 
-## Get started in three steps
+Skillhouse is live at [skillhouse-sable.vercel.app](https://skillhouse-sable.vercel.app). No local setup is required to start using the platform. Follow the steps below to create an account and complete your first action as either a freelancer or a client.
 
-Get your documentation site running locally and make your first customization.
+<Steps>
+  <Step title="Visit the platform">
+    Open [https://skillhouse-sable.vercel.app](https://skillhouse-sable.vercel.app) in your browser. You will land on the homepage, which includes a job category browser, testimonials, and the smart bot assistant for common questions.
+  </Step>
 
-### Step 1: Set up your local environment
+  <Step title="Create an account">
+    Click **Sign up** and choose how you want to register:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    - **Email and password** — enter your name, email, and a secure password
+    - **Google OAuth** — click **Continue with Google** to sign in with your Google account
 
-### Step 2: Deploy your changes
+    After entering your details, you will be prompted to select your role on the platform.
+  </Step>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+  <Step title="Select your role">
+    Choose one of two roles:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    - **Freelancer** — you will offer services, apply to jobs, and receive payments
+    - **Client** — you will post jobs, hire freelancers, and manage contracts
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    <Info>
+      Your role determines which dashboard and features you have access to. You cannot switch roles after selection without creating a new account.
+    </Info>
+  </Step>
 
-### Step 3: Go live
+  <Step title="Verify your email with OTP">
+    After registration, Skillhouse sends a one-time password (OTP) to your email address. Enter the OTP on the verification screen to activate your account. OTPs expire after a short window — if yours expires, request a new one from the same screen.
+  </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+  <Step title="Complete your profile">
+    Before taking any action on the platform, fill out your profile. The fields differ by role.
+
+    <Tabs>
+      <Tab title="As a freelancer">
+        - **Profile photo** — uploaded and stored via Cloudinary
+        - **Bio** — a short description of your background and expertise
+        - **Skills** — select from the platform's skill taxonomy
+        - **Hourly rate** — your default rate, visible to clients browsing profiles
+        - **Portfolio** — optional work samples (images or videos)
+      </Tab>
+      <Tab title="As a client">
+        - **Profile photo** — uploaded and stored via Cloudinary
+        - **Bio** — a short description of your company or project needs
+        - **Company information** — optional, displayed on your public profile
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+---
+
+## What to do next
+
+Once your profile is complete, your path on the platform diverges based on your role.
+
+<Tabs>
+  <Tab title="As a freelancer">
+    <Steps>
+      <Step title="Browse open jobs">
+        Go to the **Jobs** section from your dashboard. You can filter by category, required skills, and budget range. Each listing shows the job description, required skills, and the client's budget.
+      </Step>
+
+      <Step title="Submit a proposal">
+        On any job listing, click **Apply**. Write a cover letter explaining your approach, set your proposed rate, and submit. You can track all submitted proposals under **Applied jobs**.
+      </Step>
+
+      <Step title="Contract and escrow">
+        When a client accepts your proposal, a contract is created automatically. The client funds the escrow via Stripe at this point — you can see the contract status in your **Contracts** dashboard.
+      </Step>
+
+      <Step title="Deliver your work">
+        Complete the work and mark the contract as delivered. The client reviews your submission and, if satisfied, approves the payment release.
+      </Step>
+
+      <Step title="Receive payment">
+        Once the client approves and the admin confirms, the funds are released to your Skillhouse wallet. View your earnings and transaction history under **Earnings**.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="As a client">
+    <Steps>
+      <Step title="Post a job">
+        From your dashboard, click **Post a job**. Fill in:
+
+        - **Title** — a concise name for the work
+        - **Description** — detailed requirements and deliverables
+        - **Budget** — the amount you are willing to pay
+        - **Required skills** — used to match your job to relevant freelancers
+
+        Your job will appear on the public job board immediately after posting.
+      </Step>
+
+      <Step title="Review proposals">
+        Freelancers will start submitting proposals. Review each one from your dashboard — you can view the freelancer's profile, portfolio, and proposed rate before deciding.
+      </Step>
+
+      <Step title="Accept a proposal and fund escrow">
+        When you find the right freelancer, accept their proposal. A contract is created and you will be redirected to Stripe to pay the agreed amount. Your payment is held in escrow until you approve the final delivery.
+      </Step>
+
+      <Step title="Review and approve delivery">
+        When the freelancer marks work as delivered, review the submission and approve it if you are satisfied. Your approval triggers the admin review and final payment release.
+      </Step>
+
+      <Step title="Leave a review">
+        After the contract closes, leave a rating and written review for the freelancer. Reviews help other clients make informed hiring decisions and help freelancers build their reputation on the platform.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+---
+
+## Smart bot assistant
+
+The Skillhouse homepage includes a built-in chat bot that can answer common questions about how the platform works — including how escrow functions, how to reset your password, and how to navigate contracts. Look for the chat icon in the bottom-right corner of the homepage.
+
+<Tip>
+  If you get stuck at any point in the onboarding flow, the bot assistant can walk you through the most common issues without needing to contact support.
+</Tip>
+
+---
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Authentication" icon="lock" href="/features/authentication">
+    Learn how JWT sessions, Google OAuth, and OTP verification work under the hood.
+  </Card>
+  <Card title="Jobs and proposals" icon="file-text" href="/features/jobs-and-proposals">
+    Understand the full proposal workflow, from posting to acceptance.
+  </Card>
+  <Card title="Payments and escrow" icon="credit-card" href="/features/payments-and-escrow">
+    How Stripe handles payments, refunds, and webhook events on Skillhouse.
+  </Card>
+  <Card title="Running locally" icon="terminal" href="/deployment/running-locally">
+    Set up the Skillhouse backend and frontend on your local machine for development.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

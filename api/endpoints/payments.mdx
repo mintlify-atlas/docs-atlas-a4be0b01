@@ -1,0 +1,313 @@
+---
+title: "Payments endpoints"
+description: "Initiate Stripe checkout sessions, handle Stripe webhooks, manage escrow releases and refunds, submit reviews, and upload chat media."
+keywords: ["payments", "stripe", "escrow", "checkout", "webhook", "release fund", "refund", "review", "media upload"]
+---
+
+Skillhouse uses Stripe for payment processing and an internal escrow ledger to hold funds until work is approved. The payment flow proceeds as follows:
+
+1. The client calls `/api/client/job/payment/:jobId` to create a Stripe Checkout session.
+2. The user completes payment on the Stripe-hosted checkout page.
+3. Stripe sends a `checkout.session.completed` event to the `/webhook` endpoint.
+4. The webhook handler creates the escrow record and the contract.
+5. The client calls `PATCH /api/client/release-fund/:contractId` to request fund release after the work is done.
+6. An admin approves the release via `PUT /api/admin/escrow/release-fund/:contractId`, which transfers the funds to the freelancer's wallet.
+
+<Note>
+  All monetary values are in **INR (Indian Rupees)**. Stripe amounts are passed in paise (1 INR = 100 paise), so the server multiplies the `rate` by 100 when creating the checkout session.
+</Note>
+
+---
+
+## POST /api/client/job/payment/:jobId
+
+Create a Stripe Checkout session for a job. The client is redirected to the returned session URL to complete payment.
+
+**Auth required:** Yes — `client` role
+
+### Path parameters
+
+<ParamField path="jobId" type="string" required>
+  MongoDB ObjectId of the job being paid for.
+</ParamField>
+
+### Request body
+
+<ParamField body="title" type="string" required>
+  Job title displayed on the Stripe checkout page.
+</ParamField>
+
+<ParamField body="rate" type="number" required>
+  Amount in INR. Converted to paise internally before being sent to Stripe.
+</ParamField>
+
+<ParamField body="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer being hired. Stored in the Stripe session metadata so the webhook can create the contract.
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  The Stripe Checkout session ID. Use this with `stripe.redirectToCheckout({ sessionId })` on the frontend to redirect the user.
+</ResponseField>
+
+<Warning>
+  If the payment is cancelled by the user, Stripe redirects to `/client/jobs/home?cancelled=true`. No escrow record or contract is created for cancelled sessions.
+</Warning>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/client/job/payment/64f1a2b3c4d5e6f7a8b9c0d4 \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "React Frontend Developer",
+    "rate": 50000,
+    "freelancerId": "64f1a2b3c4d5e6f7a8b9c0d6"
+  }'
+```
+
+---
+
+## POST /webhook
+
+Stripe sends signed events to this endpoint after a payment succeeds. The handler verifies the Stripe signature and processes `checkout.session.completed` events to create escrow records.
+
+**Auth required:** No (Stripe-signed, verified with `STRIPE_WEBHOOK_SECRET`)
+
+<Warning>
+  This endpoint must receive the **raw request body** — do not apply `express.json()` middleware to this route. Stripe signature verification fails if the body is parsed before the handler receives it. The backend configures this route separately with `express.raw()`.
+</Warning>
+
+### Request headers
+
+<ParamField header="stripe-signature" type="string" required>
+  Stripe-generated signature used to verify the event originated from Stripe.
+</ParamField>
+
+### Behavior
+
+When a `checkout.session.completed` event is received:
+
+1. The session `metadata` (`jobId`, `clientId`, `freelancerId`) is extracted.
+2. An escrow record is created with `status: "funded"`.
+3. A platform fee is calculated and stored.
+4. The `freelancerEarning` (amount minus platform fee) is stored on the escrow record.
+
+No response body is expected by Stripe beyond a `200` status code.
+
+```bash cURL
+# This endpoint is called by Stripe, not directly by clients.
+# To test locally, use the Stripe CLI:
+# stripe listen --forward-to localhost:3000/webhook
+```
+
+---
+
+## POST /api/client/review/rate-freelancer/:clientId
+
+Submit a star rating and written review for a freelancer after a contract is completed.
+
+**Auth required:** Yes — `client` role
+
+### Path parameters
+
+<ParamField path="clientId" type="string" required>
+  MongoDB ObjectId of the client submitting the review.
+</ParamField>
+
+### Request body
+
+<ParamField body="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer being reviewed.
+</ParamField>
+
+<ParamField body="contractId" type="string" required>
+  MongoDB ObjectId of the completed contract this review is for.
+</ParamField>
+
+<ParamField body="rating" type="number" required>
+  Integer from `1` to `5`.
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Written review text.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the review was saved.
+</ResponseField>
+
+<ResponseField name="review" type="object">
+  The created review document.
+  <Expandable title="properties">
+    <ResponseField name="_id" type="string">
+      MongoDB ObjectId of the review.
+    </ResponseField>
+    <ResponseField name="contractId" type="string">
+      Associated contract ID.
+    </ResponseField>
+    <ResponseField name="clientId" type="string">
+      Client who submitted the review.
+    </ResponseField>
+    <ResponseField name="freelancerId" type="string">
+      Freelancer being reviewed.
+    </ResponseField>
+    <ResponseField name="rating" type="number">
+      Star rating (1–5).
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      Review text.
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/client/review/rate-freelancer/64f1a2b3c4d5e6f7a8b9c0d5 \
+  -H "Authorization: Bearer <accessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "freelancerId": "64f1a2b3c4d5e6f7a8b9c0d6",
+    "contractId": "64f1a2b3c4d5e6f7a8b9c0ef",
+    "rating": 5,
+    "description": "Excellent work, delivered ahead of schedule."
+  }'
+```
+
+---
+
+## GET /api/client/review/show-reviews/:freelancerId
+
+Retrieve all reviews for a specific freelancer.
+
+**Auth required:** No
+
+### Path parameters
+
+<ParamField path="freelancerId" type="string" required>
+  MongoDB ObjectId of the freelancer.
+</ParamField>
+
+### Response
+
+Array of review objects. Each review includes `rating`, `description`, `clientId`, and `createdAt`.
+
+```bash cURL
+curl "https://your-backend-domain.com/api/client/review/show-reviews/64f1a2b3c4d5e6f7a8b9c0d6"
+```
+
+---
+
+## PUT /api/admin/escrow/release-fund/:contractId
+
+Admin approves a pending fund-release request. Transfers the `freelancerEarning` amount from the escrow record to the freelancer's wallet.
+
+**Auth required:** Yes — `admin` role
+
+### Path parameters
+
+<ParamField path="contractId" type="string" required>
+  MongoDB ObjectId of the contract whose funds should be released.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that funds were released.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated escrow record reflecting the `released` status.
+</ResponseField>
+
+<Note>
+  The client must have first called `PATCH /api/client/release-fund/:contractId` to set `releaseFundStatus` to `Requested` before an admin can approve the release.
+</Note>
+
+```bash cURL
+curl -X PUT https://your-backend-domain.com/api/admin/escrow/release-fund/64f1a2b3c4d5e6f7a8b9c0ef \
+  -H "Authorization: Bearer <adminAccessToken>"
+```
+
+---
+
+## PUT /api/admin/escrow/refund-client/:contractId/:clientId
+
+Refund the escrowed funds to the client. Used when a contract is canceled or disputed.
+
+**Auth required:** Yes — `admin` or `client` role
+
+### Path parameters
+
+<ParamField path="contractId" type="string" required>
+  MongoDB ObjectId of the contract.
+</ParamField>
+
+<ParamField path="clientId" type="string" required>
+  MongoDB ObjectId of the client to refund.
+</ParamField>
+
+### Request body
+
+<ParamField body="cancelReason" type="string">
+  Short reason code for the cancellation (e.g., `"freelancer_unresponsive"`).
+</ParamField>
+
+<ParamField body="cancelReasonDescription" type="string">
+  Detailed description of the cancellation reason.
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  Confirmation that the refund was processed.
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Updated escrow record reflecting `status: "refunded"`.
+</ResponseField>
+
+```bash cURL
+curl -X PUT "https://your-backend-domain.com/api/admin/escrow/refund-client/64f1a2b3c4d5e6f7a8b9c0ef/64f1a2b3c4d5e6f7a8b9c0d5" \
+  -H "Authorization: Bearer <adminAccessToken>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cancelReason": "freelancer_unresponsive",
+    "cancelReasonDescription": "Freelancer did not respond for 14 days."
+  }'
+```
+
+---
+
+## POST /api/media/upload
+
+Upload an image or video file for use in chat messages. Returns the stored URL and media type.
+
+**Auth required:** No (protected at the application level via session)
+
+### Request body
+
+Send the file as `multipart/form-data` with the field name `media`.
+
+<ParamField body="media" type="file" required>
+  Image or video file. Images are detected by MIME type prefix `image/`; all other files are treated as video.
+</ParamField>
+
+### Response
+
+<ResponseField name="mediaUrl" type="string">
+  The URL of the uploaded file as returned by the storage provider (Cloudinary).
+</ResponseField>
+
+<ResponseField name="mediaType" type="string">
+  `image` or `video`, determined by the uploaded file's MIME type.
+</ResponseField>
+
+```bash cURL
+curl -X POST https://your-backend-domain.com/api/media/upload \
+  -F "media=@/path/to/screenshot.png"
+```

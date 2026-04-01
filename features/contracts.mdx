@@ -1,0 +1,124 @@
+---
+title: 'Contracts'
+description: 'How contracts work in Skillhouse — creation, lifecycle states, fund release, and cancellation.'
+keywords: ['contracts', 'agreement', 'fund release', 'cancellation', 'escrow', 'client', 'freelancer']
+---
+
+A contract in Skillhouse is the formal agreement between a client and a freelancer to carry out a specific job. It is created by the client after accepting a freelancer's proposal, and it governs the work, payment, and completion process.
+
+---
+
+## Contract lifecycle
+
+<Steps>
+  <Step title="Pending">
+    The client creates the contract after accepting a freelancer's proposal. The contract is recorded but work has not started yet. The client is prompted to fund escrow.
+  </Step>
+  <Step title="Started">
+    The escrow payment has been made. The contract becomes active and the freelancer can begin work. A direct chat channel opens between the client and freelancer.
+  </Step>
+  <Step title="Ongoing">
+    Work is in progress. Both parties can communicate via the built-in chat. The client monitors progress and the freelancer delivers the work.
+  </Step>
+  <Step title="Completed">
+    The client requests a fund release, signalling that the work is done and they approve payment. An admin reviews and releases the escrowed funds to the freelancer's wallet. The job status is set to Closed.
+  </Step>
+  <Step title="Cancelled">
+    Either party cancels the contract before completion. The reason and the cancelling party are recorded. If escrow was funded, the client can request a refund through the escrow process.
+  </Step>
+</Steps>
+
+<Tip>
+  Check the **Status history** section on your contract detail page to see a timestamped log of every status change since the contract was created.
+</Tip>
+
+---
+
+## Creating a contract (clients)
+
+After accepting a freelancer's proposal on a job:
+
+1. Open the job from **My jobs** and navigate to the accepted applicant.
+2. Click **Create contract**. Skillhouse generates a contract record linking the job, client, and freelancer with the agreed amount.
+3. You will be taken to the payment step to fund the escrow. See [Payments and escrow](/features/payments-and-escrow) for details.
+
+<Info>
+  Only one contract can exist per job. If a contract already exists for a job, the system prevents a duplicate from being created.
+</Info>
+
+---
+
+## Requesting a fund release (clients)
+
+When the freelancer has delivered the work and you are satisfied:
+
+1. Open the contract from your **Contracts** dashboard.
+2. Click **Release funds**. The contract's `releaseFundStatus` changes from `NotRequested` to `Requested`.
+3. An admin reviews the request and approves it, transferring the held funds to the freelancer's wallet.
+
+The contract status moves to **Completed** once funds are released.
+
+---
+
+## Cancelling a contract
+
+Either the client or the freelancer can cancel a contract that has not yet been completed.
+
+<Tabs>
+  <Tab title="Client cancellation">
+    1. Open the contract from your **Contracts** dashboard.
+    2. Click **Cancel contract**.
+    3. Select a cancellation reason and optionally provide a description.
+    4. Confirm the cancellation.
+
+    If you have already funded escrow, you can request a refund after cancellation. The refund is processed by an admin.
+  </Tab>
+  <Tab title="Freelancer cancellation">
+    1. Open the contract from your **Contracts** dashboard.
+    2. Click **Cancel contract**.
+    3. Select a cancellation reason and optionally provide a description.
+    4. Confirm the cancellation.
+
+    Cancelling a contract as a freelancer may affect your standing with the client and your platform reputation.
+  </Tab>
+</Tabs>
+
+<Warning>
+  Cancelling a contract after escrow has been funded does not automatically trigger a refund. The client must separately request a refund through the escrow process. See [Payments and escrow](/features/payments-and-escrow) for instructions.
+</Warning>
+
+---
+
+## Contract fields reference
+
+| Field | Description |
+|---|---|
+| Contract ID | A unique identifier for the contract |
+| Job | The job this contract is linked to |
+| Client | The client who created the contract |
+| Freelancer | The freelancer engaged for the work |
+| Amount | The agreed payment amount |
+| Status | Current lifecycle stage |
+| Escrow paid | Whether the client has funded escrow |
+| Release fund status | `NotRequested`, `Requested`, or `Approved` |
+| Cancelled by | `Client` or `Freelancer` (if cancelled) |
+| Cancel reason | Reason provided at cancellation |
+
+---
+
+## Admin visibility
+
+Admins can view all contracts across the platform from the admin dashboard. This allows them to monitor active work, review fund release requests, and process refunds or releases in a timely manner.
+
+---
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Payments and escrow" icon="lock" href="/features/payments-and-escrow">
+    How escrow funding, fund release, and refunds work.
+  </Card>
+  <Card title="Chat" icon="message-circle" href="/features/chat">
+    Communicating with your client or freelancer during the contract.
+  </Card>
+</CardGroup>

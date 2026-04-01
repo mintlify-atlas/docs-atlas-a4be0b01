@@ -1,0 +1,150 @@
+---
+title: 'Architecture'
+description: 'How the Skillhouse Backend and Frontend are structured and how the major services fit together.'
+keywords: ['architecture', 'system design', 'repository pattern', 'monorepo', 'backend', 'frontend']
+---
+
+Skillhouse is a monorepo with two independent applications that communicate over HTTP and WebSockets. The Backend exposes a REST API and a Socket.io server; the Frontend is a React single-page application that consumes both.
+
+## Monorepo structure
+
+```
+SkillHouse/
+├── Backend/     # Express + Node.js + TypeScript API server
+└── Frontend/    # React + Vite + TypeScript SPA
+```
+
+Each directory has its own `package.json`, `node_modules`, and `.env`. They are deployed independently — the Frontend to Vercel, and the Backend to any Node.js-compatible host.
+
+## Frontend
+
+The Frontend is a React 18 SPA built with Vite and TypeScript. It communicates with the Backend exclusively over the network — there is no server-side rendering.
+
+- **Routing**: React Router v7
+- **State management**: Redux Toolkit with `redux-persist` for session hydration
+- **HTTP**: Axios, with a shared `axiosInstance` that reads `VITE_API_URL` for the base URL
+- **Real-time**: Socket.io client, connected to `VITE_API_URL`
+- **Payments**: Stripe.js loaded via `@stripe/react-stripe-js`
+- **UI**: TailwindCSS, Shadcn (Radix UI primitives), MUI, Framer Motion
+- **Deployment**: Vercel; a `vercel.json` rewrite rule routes all paths to `index.html` so React Router handles navigation
+
+## Backend
+
+The Backend is an Express 4 server written in TypeScript. It follows the **Repository Pattern**, separating HTTP concerns from business logic and data access into distinct layers.
+
+- **HTTP framework**: Express 4
+- **Language**: TypeScript, compiled to `dist/` with `tsc`
+- **Process manager**: `nodemon` for development hot-reload
+- **Authentication**: JWT access + refresh tokens issued as HTTP-only cookies
+- **Real-time**: Socket.io attached to the same Node.js `http.Server` instance as Express
+- **File uploads**: Multer with `multer-storage-cloudinary`; files go directly to Cloudinary
+- **Logging**: Winston with `winston-daily-rotate-file` and Morgan HTTP request logging
+
+### Repository pattern
+
+The Backend enforces a four-layer architecture to keep each concern isolated:
+
+```
+HTTP Request
+     │
+     ▼
+ Controller        — Parses request, validates input, returns HTTP response
+     │
+     ▼
+  Service          — Business logic, orchestrates operations, calls repositories
+     │
+     ▼
+ Repository        — Data access only; queries and writes to Mongoose models
+     │
+     ▼
+   Model           — Mongoose schema definition, maps to a MongoDB collection
+```
+
+Each role domain (user, client, freelancer, admin) has its own set of controllers, services, and repositories under their respective subdirectories in `src/`.
+
+## Database
+
+MongoDB is the primary data store, accessed through Mongoose. The application uses the following collections:
+
+| Collection | Model file | Purpose |
+|---|---|---|
+| `users` | `userModel.ts` | Shared user accounts (all roles) |
+| `clients` | `clientModel.ts` | Client profile data |
+| `freelancers` | `freelancerModel.ts` | Freelancer profile and skills |
+| `jobs` | `jobModel.ts` | Job postings created by clients |
+| `applications` | `applicationModel.ts` | Freelancer proposals on jobs |
+| `contracts` | `contractModel.ts` | Active contracts between client and freelancer |
+| `reviews` | `reviewMode.ts` | Post-contract reviews |
+| `wallets` | `walletModel.ts` | User wallet balances |
+| `escrows` | `escrowModel.ts` | Funds held in escrow during active contracts |
+| `conversations` | `conversationModel.ts` | Chat conversation threads |
+| `messages` | `messageModel.ts` | Individual chat messages |
+| `notifications` | `notificationModel.ts` | In-app notifications |
+| `categories` | `categoryModel.ts` | Job categories (managed by admin) |
+| `skills` | `skillsModel.ts` | Skills taxonomy (managed by admin) |
+
+## Real-time (Socket.io)
+
+Socket.io is initialised on the same HTTP server as Express and handles real-time chat between clients and freelancers. The socket server is started after the Express server begins listening.
+
+Events are emitted for:
+- New message delivery
+- Message read receipts
+- Online/offline presence
+
+The Frontend connects to the socket at the same origin as the REST API (`VITE_API_URL`).
+
+## Authentication
+
+Authentication uses a dual-token JWT pattern:
+
+- **Access token** — short-lived, signed with `JWT_SECRET`, sent as an HTTP-only cookie
+- **Refresh token** — longer-lived, signed with `REFRESH_SECRET`, used to issue new access tokens without re-login
+
+Google OAuth is supported via `@react-oauth/google` on the Frontend and `google-auth-library` on the Backend. The Google client ID is shared between both sides via `VITE_GOOGLE_CLIENT_ID` (Frontend) and can be verified server-side.
+
+## Payments and escrow
+
+Stripe handles all payment processing:
+
+1. The client creates a contract and pays upfront via Stripe. Funds are held in an escrow record in MongoDB.
+2. The client approves the work after delivery.
+3. An admin reviews and releases payment to the freelancer's wallet.
+4. Stripe webhook events confirm payment status. The Backend exposes a `/webhook` route that receives raw request bodies and verifies the signature using `STRIPE_WEBHOOK_SECRET`.
+
+## File storage
+
+Cloudinary stores all user-uploaded media:
+
+- Profile images (resized to 500×500 on upload)
+- Chat media (images and videos up to 100 MB)
+
+Multer streams uploads directly to Cloudinary via `multer-storage-cloudinary`. No files are written to the server's local filesystem.
+
+## Email and OTP
+
+Nodemailer sends transactional emails (OTP verification, password reset) using the credentials in `EMAIL_USER` and `EMAIL_PASS`. OTP codes are stored in Redis with a TTL so they expire automatically without requiring database writes.
+
+## High-level diagram
+
+```
+Browser (React SPA)
+        │
+        │  REST API (HTTP/JSON)
+        │  Socket.io (WebSocket)
+        ▼
+  Express Server
+        │
+        ├── /api/auth        → User auth, JWT, Google OAuth
+        ├── /api/client      → Jobs, contracts, payments, reviews
+        ├── /api/freelancer  → Applications, contracts, profile
+        ├── /api/admin       → User management, escrow, categories
+        ├── /api/media       → Chat messages and media
+        └── /webhook         → Stripe webhook events
+        │
+        ├── MongoDB          ← Primary data store (Mongoose)
+        ├── Redis            ← OTP storage, short-lived session data
+        ├── Cloudinary       ← File and media storage
+        ├── Stripe           ← Payment processing
+        └── Nodemailer       ← Transactional email
+```
